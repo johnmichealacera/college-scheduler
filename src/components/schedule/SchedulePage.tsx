@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Filter } from 'lucide-react'
+import { Plus, Filter, FileDown } from 'lucide-react'
 import { useSchedule, useDeleteScheduleEntry } from '../../hooks/useSchedule'
 import { useTeachers } from '../../hooks/useTeachers'
 import { useRooms } from '../../hooks/useRooms'
@@ -38,15 +38,33 @@ export function SchedulePage() {
   const teacherOptions = teachers.map((t) => ({ value: t.id, label: t.name }))
   const roomOptions = rooms.map((r) => ({ value: r.id, label: r.name }))
 
+  const handleExportPDF = async () => {
+    const filtered = entries.filter((e) => {
+      if (filterTeacher && e.teacher_id !== filterTeacher) return false
+      if (filterRoom && e.room_id !== filterRoom) return false
+      return true
+    })
+    const activeTeacher = teachers.find((t) => t.id === filterTeacher)
+    const activeRoom = rooms.find((r) => r.id === filterRoom)
+    const label = [activeTeacher?.name, activeRoom?.name].filter(Boolean).join(', ')
+    const { generateSchedulePDF } = await import('../../lib/generateSchedulePDF')
+    generateSchedulePDF(filtered, label || undefined)
+  }
+
   return (
     <div>
       <PageHeader
         title="Schedule"
         description="Weekly timetable — click an entry to edit"
         action={
-          <Button onClick={() => setModal('add')}>
-            <Plus size={16} /> Add Class
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleExportPDF} disabled={entries.length === 0}>
+              <FileDown size={16} /> Export PDF
+            </Button>
+            <Button onClick={() => setModal('add')}>
+              <Plus size={16} /> Add Class
+            </Button>
+          </div>
         }
       />
 
