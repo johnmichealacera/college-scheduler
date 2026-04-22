@@ -57,7 +57,7 @@ export function SchedulePage() {
         title="Schedule"
         description="Weekly timetable — click an entry to edit"
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={handleExportPDF} disabled={entries.length === 0}>
               <FileDown size={16} /> Export PDF
             </Button>
@@ -69,7 +69,7 @@ export function SchedulePage() {
       />
 
       {/* Stats bar */}
-      <div className="flex items-center gap-4 mb-5">
+      <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="text-sm text-gray-500">
           <span className="font-semibold text-gray-900">{entries.length}</span> scheduled classes
         </div>
@@ -82,10 +82,12 @@ export function SchedulePage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-5 p-4 bg-white rounded-xl border border-gray-200">
-        <Filter size={14} className="text-gray-400" />
-        <span className="text-sm text-gray-500 font-medium">Filter by:</span>
-        <div className="w-48">
+      <div className="flex flex-wrap items-center gap-3 mb-5 p-4 bg-white rounded-xl border border-gray-200">
+        <div className="flex items-center gap-2 shrink-0">
+          <Filter size={14} className="text-gray-400" />
+          <span className="text-sm text-gray-500 font-medium">Filter by:</span>
+        </div>
+        <div className="w-full sm:w-48">
           <Select
             placeholder="All Teachers"
             options={teacherOptions}
@@ -93,7 +95,7 @@ export function SchedulePage() {
             onChange={(e) => setFilterTeacher(e.target.value)}
           />
         </div>
-        <div className="w-40">
+        <div className="w-full sm:w-40">
           <Select
             placeholder="All Rooms"
             options={roomOptions}

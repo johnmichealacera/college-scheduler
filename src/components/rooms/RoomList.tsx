@@ -35,7 +35,7 @@ export function RoomList() {
       ) : !rooms?.length ? (
         <EmptyState onAdd={() => setModal('add')} />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {rooms.map((r) => (
             <div
               key={r.id}

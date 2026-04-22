@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, X } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const nav = [
@@ -10,13 +10,32 @@ const nav = [
   { to: '/schedule', icon: Calendar, label: 'Schedule' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-gray-900 text-white flex flex-col z-20">
+    <aside
+      className={cn(
+        'fixed left-0 top-0 h-full w-56 bg-gray-900 text-white flex flex-col z-20 transition-transform duration-300',
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      )}
+    >
       <div className="px-6 py-5 border-b border-gray-700">
-        <div className="flex items-center gap-2">
-          <Calendar size={20} className="text-blue-400" />
-          <span className="font-semibold text-sm tracking-wide">ClassSync</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar size={20} className="text-blue-400" />
+            <span className="font-semibold text-sm tracking-wide">ClassSync</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors md:hidden"
+            aria-label="Close navigation"
+          >
+            <X size={16} />
+          </button>
         </div>
         <p className="text-xs text-gray-400 mt-0.5">School Scheduler</p>
       </div>
@@ -26,6 +45,7 @@ export function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',

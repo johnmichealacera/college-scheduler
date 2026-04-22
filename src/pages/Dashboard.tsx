@@ -65,14 +65,14 @@ export function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Teachers" value={teachers?.length} icon={Users} to="/teachers" color="bg-blue-100 text-blue-700" />
         <StatCard label="Subjects" value={subjects?.length} icon={BookOpen} to="/subjects" color="bg-purple-100 text-purple-700" />
         <StatCard label="Rooms" value={rooms?.length} icon={DoorOpen} to="/rooms" color="bg-green-100 text-green-700" />
         <StatCard label="Scheduled Classes" value={entries.length} icon={Calendar} to="/schedule" color="bg-amber-100 text-amber-700" />
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Conflicts panel */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
