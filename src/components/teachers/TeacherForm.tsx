@@ -7,8 +7,20 @@ import { Button } from '../ui/Button'
 import { useCreateTeacher, useUpdateTeacher } from '../../hooks/useTeachers'
 import type { Teacher } from '../../types'
 
-const schema = z.object({ name: z.string().min(2, 'Name must be at least 2 characters') })
+const schema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+})
 type FormValues = z.infer<typeof schema>
+
+function nameToEmail(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .trim()
+      .replace(/\s+/g, '.') + '@school.edu'
+  )
+}
 
 interface TeacherFormProps {
   teacher?: Teacher
@@ -31,7 +43,7 @@ export function TeacherForm({ teacher, onSuccess }: TeacherFormProps) {
     if (isEdit) {
       await update.mutateAsync({ id: teacher.id, name })
     } else {
-      await create.mutateAsync(name)
+      await create.mutateAsync({ name, email: nameToEmail(name) })
     }
     onSuccess()
   }
@@ -40,7 +52,7 @@ export function TeacherForm({ teacher, onSuccess }: TeacherFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <Input label="Teacher Name" placeholder="e.g. Dr. Jane Smith" error={errors.name?.message} {...register('name')} />
+      <Input label="Full Name" placeholder="e.g. Dr. Jane Smith" error={errors.name?.message} {...register('name')} />
       <div className="flex justify-end gap-2 pt-1">
         <Button type="submit" loading={isPending}>
           {isEdit ? 'Save Changes' : 'Add Teacher'}
