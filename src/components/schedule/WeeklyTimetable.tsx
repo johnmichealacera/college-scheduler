@@ -136,6 +136,9 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
                       <p className="text-xs font-semibold truncate leading-tight">
                         {entry.subject?.name ?? '—'}
                       </p>
+                      <p className="text-xs opacity-80 truncate">
+                        {entry.teacher?.name ?? '—'}
+                      </p>
                       <p className="text-xs opacity-70 truncate">
                         {entry.room?.name}
                       </p>
