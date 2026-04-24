@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, BookOpen } from 'lucide-react'
+import { Pencil, Trash2, Plus, BookOpen, Search } from 'lucide-react'
 import { useSubjects, useDeleteSubject } from '../../hooks/useSubjects'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -11,6 +11,11 @@ export function SubjectList() {
   const { data: subjects, isLoading } = useSubjects()
   const deleteSubject = useDeleteSubject()
   const [modal, setModal] = useState<'add' | Subject | null>(null)
+  const [search, setSearch] = useState('')
+
+  const filtered = subjects?.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   const handleDelete = (id: string) => {
     if (confirm('Delete this subject? Its schedule entries will also be removed.')) {
@@ -30,13 +35,28 @@ export function SubjectList() {
         }
       />
 
+      {!isLoading && !!subjects?.length && (
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search subjects..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center h-40 text-gray-400">Loading...</div>
       ) : !subjects?.length ? (
         <EmptyState onAdd={() => setModal('add')} />
+      ) : !filtered?.length ? (
+        <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No subjects match your search.</div>
       ) : (
-        <div className="grid gap-3">
-          {subjects.map((s) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((s) => (
             <div
               key={s.id}
               className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:shadow-sm transition-shadow"

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, DoorOpen } from 'lucide-react'
+import { Pencil, Trash2, Plus, DoorOpen, Search } from 'lucide-react'
 import { useRooms, useDeleteRoom } from '../../hooks/useRooms'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -11,6 +11,11 @@ export function RoomList() {
   const { data: rooms, isLoading } = useRooms()
   const deleteRoom = useDeleteRoom()
   const [modal, setModal] = useState<'add' | Room | null>(null)
+  const [search, setSearch] = useState('')
+
+  const filtered = rooms?.filter((r) =>
+    r.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   const handleDelete = (id: string) => {
     if (confirm('Delete this room? Its schedule entries will also be removed.')) {
@@ -30,13 +35,28 @@ export function RoomList() {
         }
       />
 
+      {!isLoading && !!rooms?.length && (
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search rooms..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center h-40 text-gray-400">Loading...</div>
       ) : !rooms?.length ? (
         <EmptyState onAdd={() => setModal('add')} />
+      ) : !filtered?.length ? (
+        <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No rooms match your search.</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {rooms.map((r) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((r) => (
             <div
               key={r.id}
               className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:shadow-sm transition-shadow"

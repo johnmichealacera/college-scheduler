@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, Users } from 'lucide-react'
+import { Pencil, Trash2, Plus, Users, Search } from 'lucide-react'
 import { useTeachers, useDeleteTeacher } from '../../hooks/useTeachers'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -11,6 +11,11 @@ export function TeacherList() {
   const { data: teachers, isLoading } = useTeachers()
   const deleteTeacher = useDeleteTeacher()
   const [modal, setModal] = useState<'add' | Teacher | null>(null)
+  const [search, setSearch] = useState('')
+
+  const filtered = teachers?.filter((t) =>
+    t.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   const handleDelete = (id: string) => {
     if (confirm('Delete this teacher? Their schedule entries will also be removed.')) {
@@ -30,13 +35,28 @@ export function TeacherList() {
         }
       />
 
+      {!isLoading && !!teachers?.length && (
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search teachers..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center h-40 text-gray-400">Loading...</div>
       ) : !teachers?.length ? (
         <EmptyState onAdd={() => setModal('add')} />
+      ) : !filtered?.length ? (
+        <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No teachers match your search.</div>
       ) : (
-        <div className="grid gap-3">
-          {teachers.map((t) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((t) => (
             <div
               key={t.id}
               className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:shadow-sm transition-shadow"
