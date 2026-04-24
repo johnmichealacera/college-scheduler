@@ -4,7 +4,7 @@ import { useSchedule, useDeleteScheduleEntry } from '../../hooks/useSchedule'
 import { useTeachers } from '../../hooks/useTeachers'
 import { useRooms } from '../../hooks/useRooms'
 import { Button } from '../ui/Button'
-import { Select } from '../ui/Select'
+import { Combobox } from '../ui/Combobox'
 import { Modal } from '../ui/Modal'
 import { WeeklyTimetable } from './WeeklyTimetable'
 import { ScheduleForm } from './ScheduleForm'
@@ -88,19 +88,19 @@ export function SchedulePage() {
           <span className="text-sm text-gray-500 font-medium">Filter by:</span>
         </div>
         <div className="w-full sm:w-48">
-          <Select
+          <Combobox
             placeholder="All Teachers"
             options={teacherOptions}
             value={filterTeacher}
-            onChange={(e) => setFilterTeacher(e.target.value)}
+            onChange={setFilterTeacher}
           />
         </div>
         <div className="w-full sm:w-40">
-          <Select
+          <Combobox
             placeholder="All Rooms"
             options={roomOptions}
             value={filterRoom}
-            onChange={(e) => setFilterRoom(e.target.value)}
+            onChange={setFilterRoom}
           />
         </div>
         {(filterTeacher || filterRoom) && (

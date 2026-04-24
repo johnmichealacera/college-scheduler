@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { formatTime } from './utils'
+import { formatTime, timeToMinutes } from './utils'
 import type { ScheduleEntry } from '../types'
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -15,7 +15,14 @@ const DAY_COLORS: Record<string, [number, number, number]> = {
   Sunday:    [71,  85,  105],
 }
 
-export function generateSchedulePDF(entries: ScheduleEntry[], filterLabel?: string) {
+export function generateSchedulePDF(rawEntries: ScheduleEntry[], filterLabel?: string) {
+  // Strip any entries outside the allowed 7 AM – 9 PM window before rendering
+  const entries = rawEntries.filter((e) => {
+    const start = timeToMinutes(e.start_time.slice(0, 5))
+    const end = timeToMinutes(e.end_time.slice(0, 5))
+    return start >= 7 * 60 && end <= 21 * 60
+  })
+
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
   const pageW = doc.internal.pageSize.getWidth()

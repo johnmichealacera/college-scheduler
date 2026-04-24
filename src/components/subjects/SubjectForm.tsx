@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '../ui/Input'
-import { Select } from '../ui/Select'
+import { Combobox } from '../ui/Combobox'
 import { Button } from '../ui/Button'
 import { useCreateSubject, useUpdateSubject } from '../../hooks/useSubjects'
 import { useTeachers } from '../../hooks/useTeachers'
@@ -21,7 +21,7 @@ export function SubjectForm({ subject, onSuccess }: { subject?: Subject; onSucce
   const { data: teachers } = useTeachers()
   const isEdit = !!subject
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: subject?.name ?? '', teacher_id: subject?.teacher_id ?? null },
   })
@@ -45,11 +45,18 @@ export function SubjectForm({ subject, onSuccess }: { subject?: Subject; onSucce
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <Input label="Subject Name" placeholder="e.g. Mathematics" error={errors.name?.message} {...register('name')} />
-      <Select
-        label="Assigned Teacher (optional)"
-        placeholder="No teacher assigned"
-        options={teacherOptions}
-        {...register('teacher_id')}
+      <Controller
+        name="teacher_id"
+        control={control}
+        render={({ field }) => (
+          <Combobox
+            label="Assigned Teacher (optional)"
+            placeholder="No teacher assigned"
+            options={teacherOptions}
+            value={field.value ?? ''}
+            onChange={(v) => field.onChange(v || null)}
+          />
+        )}
       />
       <div className="flex justify-end pt-1">
         <Button type="submit" loading={isPending}>
