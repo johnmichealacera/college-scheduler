@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import { Menu, Calendar } from 'lucide-react'
 import { Sidebar } from './Sidebar'
+import { cn } from '../../lib/utils'
 
 interface LayoutProps {
   children: ReactNode
@@ -8,6 +9,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -18,9 +20,15 @@ export function Layout({ children }: LayoutProps) {
         />
       )}
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((c) => !c)}
+      />
 
-      <main className="flex-1 md:ml-56 min-w-0">
+      <main className={cn('flex-1 min-w-0 transition-all duration-300', collapsed ? 'md:ml-14' : 'md:ml-56')}>
+        {/* Mobile top bar */}
         <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 md:hidden">
           <button
             onClick={() => setSidebarOpen(true)}

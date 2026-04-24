@@ -44,7 +44,10 @@ export function Dashboard() {
   const { data: rooms } = useRooms()
   const { data: entries = [] } = useSchedule()
 
-  const conflicts = entries.filter((e, _, arr) =>
+  // Only display entries within valid school hours (7:00–21:00 PH time)
+  const validEntries = entries.filter((e) => e.start_time >= '07:00' && e.end_time <= '21:00')
+
+  const conflicts = validEntries.filter((e, _, arr) =>
     arr.some(
       (o) =>
         o.id !== e.id &&
@@ -55,7 +58,7 @@ export function Dashboard() {
   )
 
   const todayDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date()) as string
-  const todayEntries = entries.filter((e) => e.day === todayDay).sort((a, b) => a.start_time.localeCompare(b.start_time))
+  const todayEntries = validEntries.filter((e) => e.day === todayDay).sort((a, b) => a.start_time.localeCompare(b.start_time))
 
   return (
     <div>

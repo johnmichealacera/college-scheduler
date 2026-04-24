@@ -31,6 +31,7 @@ interface Props {
   onDelete: (id: string) => void
   filterTeacherId?: string
   filterRoomId?: string
+  filterSubjectId?: string
 }
 
 function timeToFraction(time: string): number {
@@ -90,16 +91,17 @@ interface TooltipState {
   y: number
 }
 
-export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomId }: Props) {
+export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomId, filterSubjectId }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   const filtered = useMemo(() => {
     return entries.filter((e) => {
       if (filterTeacherId && e.teacher_id !== filterTeacherId) return false
       if (filterRoomId && e.room_id !== filterRoomId) return false
+      if (filterSubjectId && e.subject_id !== filterSubjectId) return false
       return true
     })
-  }, [entries, filterTeacherId, filterRoomId])
+  }, [entries, filterTeacherId, filterRoomId, filterSubjectId])
 
   const byDay = useMemo(() => {
     const map = new Map<DayOfWeek, ScheduleEntry[]>()

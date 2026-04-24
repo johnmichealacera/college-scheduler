@@ -3,6 +3,7 @@ import { Plus, Filter, FileDown } from 'lucide-react'
 import { useSchedule, useDeleteScheduleEntry } from '../../hooks/useSchedule'
 import { useTeachers } from '../../hooks/useTeachers'
 import { useRooms } from '../../hooks/useRooms'
+import { useSubjects } from '../../hooks/useSubjects'
 import { Button } from '../ui/Button'
 import { Combobox } from '../ui/Combobox'
 import { Modal } from '../ui/Modal'
@@ -15,11 +16,13 @@ export function SchedulePage() {
   const { data: entries = [], isLoading } = useSchedule()
   const { data: teachers = [] } = useTeachers()
   const { data: rooms = [] } = useRooms()
+  const { data: subjects = [] } = useSubjects()
   const deleteEntry = useDeleteScheduleEntry()
 
   const [modal, setModal] = useState<'add' | ScheduleEntry | null>(null)
   const [filterTeacher, setFilterTeacher] = useState('')
   const [filterRoom, setFilterRoom] = useState('')
+  const [filterSubject, setFilterSubject] = useState('')
 
   const handleDelete = (id: string) => {
     if (confirm('Remove this schedule entry?')) deleteEntry.mutate(id)
@@ -35,21 +38,35 @@ export function SchedulePage() {
     )
   ).length
 
-  const teacherOptions = teachers.map((t) => ({ value: t.id, label: t.name }))
-  const roomOptions = rooms.map((r) => ({ value: r.id, label: r.name }))
+  const teacherOptions = [
+    { value: '', label: 'All Teachers' },
+    ...teachers.map((t) => ({ value: t.id, label: t.name })),
+  ]
+  const roomOptions = [
+    { value: '', label: 'All Rooms' },
+    ...rooms.map((r) => ({ value: r.id, label: r.name })),
+  ]
+  const subjectOptions = [
+    { value: '', label: 'All Subjects' },
+    ...subjects.map((s) => ({ value: s.id, label: s.name })),
+  ]
 
   const handleExportPDF = async () => {
     const filtered = entries.filter((e) => {
       if (filterTeacher && e.teacher_id !== filterTeacher) return false
       if (filterRoom && e.room_id !== filterRoom) return false
+      if (filterSubject && e.subject_id !== filterSubject) return false
       return true
     })
     const activeTeacher = teachers.find((t) => t.id === filterTeacher)
     const activeRoom = rooms.find((r) => r.id === filterRoom)
-    const label = [activeTeacher?.name, activeRoom?.name].filter(Boolean).join(', ')
+    const activeSubject = subjects.find((s) => s.id === filterSubject)
+    const label = [activeTeacher?.name, activeSubject?.name, activeRoom?.name].filter(Boolean).join(', ')
     const { generateSchedulePDF } = await import('../../lib/generateSchedulePDF')
     generateSchedulePDF(filtered, label || undefined)
   }
+
+  const hasActiveFilters = !!(filterTeacher || filterRoom || filterSubject)
 
   return (
     <div>
@@ -87,12 +104,20 @@ export function SchedulePage() {
           <Filter size={14} className="text-gray-400" />
           <span className="text-sm text-gray-500 font-medium">Filter by:</span>
         </div>
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-44">
           <Combobox
             placeholder="All Teachers"
             options={teacherOptions}
             value={filterTeacher}
-            onChange={setFilterTeacher}
+            onChange={(v) => setFilterTeacher(v)}
+          />
+        </div>
+        <div className="w-full sm:w-44">
+          <Combobox
+            placeholder="All Subjects"
+            options={subjectOptions}
+            value={filterSubject}
+            onChange={(v) => setFilterSubject(v)}
           />
         </div>
         <div className="w-full sm:w-40">
@@ -100,12 +125,12 @@ export function SchedulePage() {
             placeholder="All Rooms"
             options={roomOptions}
             value={filterRoom}
-            onChange={setFilterRoom}
+            onChange={(v) => setFilterRoom(v)}
           />
         </div>
-        {(filterTeacher || filterRoom) && (
+        {hasActiveFilters && (
           <button
-            onClick={() => { setFilterTeacher(''); setFilterRoom('') }}
+            onClick={() => { setFilterTeacher(''); setFilterRoom(''); setFilterSubject('') }}
             className="text-sm text-blue-600 hover:underline cursor-pointer"
           >
             Clear filters
@@ -122,6 +147,7 @@ export function SchedulePage() {
           onDelete={handleDelete}
           filterTeacherId={filterTeacher || undefined}
           filterRoomId={filterRoom || undefined}
+          filterSubjectId={filterSubject || undefined}
         />
       )}
 
