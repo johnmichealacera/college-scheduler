@@ -10,7 +10,8 @@ import { Modal } from '../ui/Modal'
 import { WeeklyTimetable } from './WeeklyTimetable'
 import { ScheduleForm } from './ScheduleForm'
 import { PageHeader } from '../layout/PageHeader'
-import type { ScheduleEntry } from '../../types'
+import type { ScheduleEntry, DayOfWeek } from '../../types'
+import { DAYS } from '../../types'
 
 export function SchedulePage() {
   const { data: entries = [], isLoading } = useSchedule()
@@ -23,6 +24,10 @@ export function SchedulePage() {
   const [filterTeacher, setFilterTeacher] = useState('')
   const [filterRoom, setFilterRoom] = useState('')
   const [filterSubject, setFilterSubject] = useState('')
+  const [filterDays, setFilterDays] = useState<DayOfWeek[]>([])
+
+  const toggleDay = (day: DayOfWeek) =>
+    setFilterDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day])
 
   const handleDelete = (id: string) => {
     if (confirm('Remove this schedule entry?')) deleteEntry.mutate(id)
@@ -66,7 +71,7 @@ export function SchedulePage() {
     generateSchedulePDF(filtered, label || undefined)
   }
 
-  const hasActiveFilters = !!(filterTeacher || filterRoom || filterSubject)
+  const hasActiveFilters = !!(filterTeacher || filterRoom || filterSubject || filterDays.length)
 
   return (
     <div>
@@ -99,43 +104,67 @@ export function SchedulePage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-5 p-4 bg-white rounded-xl border border-gray-200">
-        <div className="flex items-center gap-2 shrink-0">
-          <Filter size={14} className="text-gray-400" />
-          <span className="text-sm text-gray-500 font-medium">Filter by:</span>
+      <div className="flex flex-col gap-3 mb-5 p-4 bg-white rounded-xl border border-gray-200">
+        {/* Row 1: Day toggles */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 mr-1">
+            <Filter size={14} className="text-gray-400" />
+            <span className="text-sm text-gray-500 font-medium">Days:</span>
+          </div>
+          {DAYS.map((day) => {
+            const active = filterDays.includes(day)
+            const short = day.slice(0, 3)
+            return (
+              <button
+                key={day}
+                onClick={() => toggleDay(day)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  active
+                    ? 'bg-blue-600 border-blue-600 text-white'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600'
+                }`}
+              >
+                {short}
+              </button>
+            )
+          })}
         </div>
-        <div className="w-full sm:w-44">
-          <Combobox
-            placeholder="All Teachers"
-            options={teacherOptions}
-            value={filterTeacher}
-            onChange={(v) => setFilterTeacher(v)}
-          />
+
+        {/* Row 2: Other filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-44">
+            <Combobox
+              placeholder="All Teachers"
+              options={teacherOptions}
+              value={filterTeacher}
+              onChange={(v) => setFilterTeacher(v)}
+            />
+          </div>
+          <div className="w-full sm:w-44">
+            <Combobox
+              placeholder="All Subjects"
+              options={subjectOptions}
+              value={filterSubject}
+              onChange={(v) => setFilterSubject(v)}
+            />
+          </div>
+          <div className="w-full sm:w-40">
+            <Combobox
+              placeholder="All Rooms"
+              options={roomOptions}
+              value={filterRoom}
+              onChange={(v) => setFilterRoom(v)}
+            />
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setFilterTeacher(''); setFilterRoom(''); setFilterSubject(''); setFilterDays([]) }}
+              className="text-sm text-blue-600 hover:underline cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
-        <div className="w-full sm:w-44">
-          <Combobox
-            placeholder="All Subjects"
-            options={subjectOptions}
-            value={filterSubject}
-            onChange={(v) => setFilterSubject(v)}
-          />
-        </div>
-        <div className="w-full sm:w-40">
-          <Combobox
-            placeholder="All Rooms"
-            options={roomOptions}
-            value={filterRoom}
-            onChange={(v) => setFilterRoom(v)}
-          />
-        </div>
-        {hasActiveFilters && (
-          <button
-            onClick={() => { setFilterTeacher(''); setFilterRoom(''); setFilterSubject('') }}
-            className="text-sm text-blue-600 hover:underline cursor-pointer"
-          >
-            Clear filters
-          </button>
-        )}
       </div>
 
       {isLoading ? (
@@ -148,6 +177,7 @@ export function SchedulePage() {
           filterTeacherId={filterTeacher || undefined}
           filterRoomId={filterRoom || undefined}
           filterSubjectId={filterSubject || undefined}
+          filterDays={filterDays.length ? filterDays : undefined}
         />
       )}
 

@@ -32,6 +32,7 @@ interface Props {
   filterTeacherId?: string
   filterRoomId?: string
   filterSubjectId?: string
+  filterDays?: DayOfWeek[]
 }
 
 function timeToFraction(time: string): number {
@@ -91,8 +92,13 @@ interface TooltipState {
   y: number
 }
 
-export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomId, filterSubjectId }: Props) {
+export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomId, filterSubjectId, filterDays }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
+
+  const activeDays = useMemo(
+    () => (filterDays && filterDays.length > 0 ? DISPLAY_DAYS.filter((d) => filterDays.includes(d)) : DISPLAY_DAYS),
+    [filterDays]
+  )
 
   const filtered = useMemo(() => {
     return entries.filter((e) => {
@@ -121,19 +127,28 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
   return (
     <>
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <div className="min-w-[700px]">
+        <div style={{ minWidth: 64 + activeDays.length * 120 }}>
           {/* Header */}
-          <div className="grid grid-cols-[64px_repeat(7,_1fr)] border-b border-gray-200">
+          <div
+            className="grid border-b-2 border-gray-200"
+            style={{ gridTemplateColumns: `64px repeat(${activeDays.length}, 1fr)` }}
+          >
             <div className="py-3" />
-            {DISPLAY_DAYS.map((day) => (
-              <div key={day} className="py-3 px-2 text-center">
+            {activeDays.map((day, i) => (
+              <div
+                key={day}
+                className={`py-3 px-2 text-center border-l-2 border-gray-200 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
+              >
                 <DayBadge day={day} />
               </div>
             ))}
           </div>
 
           {/* Grid */}
-          <div className="relative grid grid-cols-[64px_repeat(7,_1fr)]">
+          <div
+            className="relative grid"
+            style={{ gridTemplateColumns: `64px repeat(${activeDays.length}, 1fr)` }}
+          >
             {/* Time labels */}
             <div className="relative">
               {HOURS.map((h) => (
@@ -149,20 +164,20 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
             </div>
 
             {/* Day columns */}
-            {DISPLAY_DAYS.map((day) => {
+            {activeDays.map((day, i) => {
               const dayEntries = byDay.get(day) ?? []
               const layout = computeLayout(dayEntries)
               return (
                 <div
                   key={day}
-                  className="relative border-l border-gray-100"
+                  className={`relative border-l-2 border-gray-200 ${i % 2 === 0 ? 'bg-gray-50/60' : 'bg-white'}`}
                   style={{ height: TOTAL_HOURS * ROW_HEIGHT }}
                 >
                   {/* Hour lines */}
                   {HOURS.map((h) => (
                     <div
                       key={h}
-                      className="absolute inset-x-0 border-t border-gray-100"
+                      className="absolute inset-x-0 border-t border-gray-200"
                       style={{ top: (h - DAY_START) * ROW_HEIGHT }}
                     />
                   ))}
