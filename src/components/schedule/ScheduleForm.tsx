@@ -10,7 +10,7 @@ import { useTeachers } from '../../hooks/useTeachers'
 import { useSubjects } from '../../hooks/useSubjects'
 import { useRooms } from '../../hooks/useRooms'
 import { useCreateScheduleEntry, useUpdateScheduleEntry } from '../../hooks/useSchedule'
-import { detectConflicts, suggestAvailableSlots, timeToMinutes } from '../../lib/utils'
+import { cn, detectConflicts, suggestAvailableSlots, timeToMinutes } from '../../lib/utils'
 import { DAYS } from '../../types'
 import type { ScheduleEntry, TimeSlot } from '../../types'
 
@@ -18,7 +18,7 @@ const schema = z.object({
   subject_id: z.string().min(1, 'Please select a subject'),
   teacher_id: z.string().min(1, 'Please select a teacher'),
   room_id: z.string().min(1, 'Please select a room'),
-  day: z.string().min(1, 'Please select a day'),
+  days: z.array(z.string()).min(1, 'Please select at least one day'),
   start_time: z.string().min(1, 'Start time is required'),
   end_time: z.string().min(1, 'End time is required'),
 }).refine((d) => d.start_time < d.end_time, {
@@ -48,7 +48,7 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
       subject_id: entry?.subject_id ?? '',
       teacher_id: entry?.teacher_id ?? '',
       room_id: entry?.room_id ?? '',
-      day: entry?.day ?? '',
+      days: entry?.day ? [entry.day] : [],
       start_time: entry?.start_time?.slice(0, 5) ?? '',
       end_time: entry?.end_time?.slice(0, 5) ?? '',
     },
@@ -60,34 +60,56 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
         subject_id: entry.subject_id,
         teacher_id: entry.teacher_id,
         room_id: entry.room_id,
-        day: entry.day,
+        days: [entry.day],
         start_time: entry.start_time.slice(0, 5),
         end_time: entry.end_time.slice(0, 5),
       })
     }
   }, [entry, reset])
 
-  // Watch specific fields so conflict recalculates on every relevant keystroke
-  const [teacher_id, room_id, day, start_time, end_time] = watch([
-    'teacher_id', 'room_id', 'day', 'start_time', 'end_time',
+  const [teacher_id, room_id, watchedDays, start_time, end_time] = watch([
+    'teacher_id', 'room_id', 'days', 'start_time', 'end_time',
   ])
 
-  // Derived — never stale, recalculates whenever any watched value or allEntries changes
+  const selectedDays = watchedDays ?? []
+
+  const toggleDay = (day: string) => {
+    if (entry) {
+      // Edit mode: radio behavior — only one day at a time
+      setValue('days', [day], { shouldValidate: true })
+    } else {
+      // Add mode: checkbox behavior — toggle individual days
+      const updated = selectedDays.includes(day)
+        ? selectedDays.filter((d) => d !== day)
+        : [...selectedDays, day]
+      setValue('days', updated, { shouldValidate: true })
+    }
+  }
+
   const conflicts = useMemo(() => {
-    if (!teacher_id || !room_id || !day || !start_time || !end_time) return []
-    return detectConflicts(
-      { teacher_id, room_id, day, start_time, end_time },
-      allEntries,
-      entry?.id,
-    )
-  }, [teacher_id, room_id, day, start_time, end_time, allEntries, entry?.id])
+    if (!teacher_id || !room_id || !selectedDays.length || !start_time || !end_time) return []
+    const multiDay = selectedDays.length > 1
+    return selectedDays.flatMap((day) => {
+      const dayConflicts = detectConflicts(
+        { teacher_id, room_id, day, start_time, end_time },
+        allEntries,
+        entry?.id,
+      )
+      if (!multiDay) return dayConflicts
+      return dayConflicts.map((c) => ({ ...c, message: `${day}: ${c.message}` }))
+    })
+  }, [teacher_id, room_id, selectedDays, start_time, end_time, allEntries, entry?.id])
 
   const suggestedSlots = useMemo((): TimeSlot[] => {
-    if (!conflicts.length || !day || !teacher_id || !room_id || !start_time || !end_time) return []
+    if (!conflicts.length || !teacher_id || !room_id || !start_time || !end_time) return []
     const duration = timeToMinutes(end_time) - timeToMinutes(start_time)
     if (duration <= 0) return []
-    return suggestAvailableSlots(allEntries, day, teacher_id, room_id, duration)
-  }, [conflicts.length, allEntries, day, teacher_id, room_id, start_time, end_time])
+    const firstConflictDay = selectedDays.find(
+      (day) => detectConflicts({ teacher_id, room_id, day, start_time, end_time }, allEntries, entry?.id).length > 0
+    )
+    if (!firstConflictDay) return []
+    return suggestAvailableSlots(allEntries, firstConflictDay, teacher_id, room_id, duration)
+  }, [conflicts.length, allEntries, selectedDays, teacher_id, room_id, start_time, end_time, entry?.id])
 
   const handleSelectSlot = (slot: TimeSlot) => {
     setValue('start_time', slot.start, { shouldValidate: true })
@@ -96,10 +118,11 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
 
   const onSubmit = async (data: FormValues) => {
     if (conflicts.length) return
+    const { days, ...rest } = data
     if (entry) {
-      await update.mutateAsync({ id: entry.id, ...data })
+      await update.mutateAsync({ id: entry.id, ...rest, day: days[0] })
     } else {
-      await create.mutateAsync(data)
+      await Promise.all(days.map((day) => create.mutateAsync({ ...rest, day })))
     }
     onSuccess()
   }
@@ -107,10 +130,10 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
   const teacherOptions = (teachers ?? []).map((t) => ({ value: t.id, label: t.name }))
   const subjectOptions = (subjects ?? []).map((s) => ({ value: s.id, label: s.name }))
   const roomOptions = (rooms ?? []).map((r) => ({ value: r.id, label: r.name }))
-  const dayOptions = DAYS.map((d) => ({ value: d, label: d }))
 
   const isPending = create.isPending || update.isPending
   const hasConflict = conflicts.length > 0
+  const daysError = (errors.days as { message?: string } | undefined)?.message
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -133,7 +156,32 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
         className={hasConflict && conflicts.some(c => c.type === 'room') ? 'border-red-500 ring-1 ring-red-400' : ''}
         {...register('room_id')}
       />
-      <Select label="Day" placeholder="Select a day" options={dayOptions} error={errors.day?.message} {...register('day')} />
+
+      {/* Day picker — single selection in edit mode, multi-select in add mode */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-gray-700">
+          {entry ? 'Day' : 'Day(s)'}
+          {!entry && <span className="ml-1 text-xs font-normal text-gray-400">(select one or more)</span>}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {DAYS.map((day) => (
+            <button
+              key={day}
+              type="button"
+              onClick={() => toggleDay(day)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                selectedDays.includes(day)
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+              )}
+            >
+              {day.slice(0, 3)}
+            </button>
+          ))}
+        </div>
+        {daysError && <p className="text-xs text-red-600">{daysError}</p>}
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input
@@ -161,7 +209,7 @@ export function ScheduleForm({ entry, allEntries, onSuccess, onCancel }: Schedul
           className={hasConflict ? 'opacity-50 cursor-not-allowed' : ''}
           title={hasConflict ? 'Resolve conflicts before saving' : undefined}
         >
-          {entry ? 'Save Changes' : 'Add to Schedule'}
+          {entry ? 'Save Changes' : `Add to Schedule${selectedDays.length > 1 ? ` (${selectedDays.length} days)` : ''}`}
         </Button>
       </div>
     </form>
