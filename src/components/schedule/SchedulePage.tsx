@@ -6,6 +6,7 @@ import { useRooms } from '../../hooks/useRooms'
 import { useSubjects } from '../../hooks/useSubjects'
 import { Button } from '../ui/Button'
 import { Combobox } from '../ui/Combobox'
+import { MultiCombobox } from '../ui/MultiCombobox'
 import { Modal } from '../ui/Modal'
 import { WeeklyTimetable } from './WeeklyTimetable'
 import { ScheduleForm } from './ScheduleForm'
@@ -22,9 +23,10 @@ export function SchedulePage() {
 
   const [modal, setModal] = useState<'add' | ScheduleEntry | null>(null)
   const [filterTeacher, setFilterTeacher] = useState('')
-  const [filterRoom, setFilterRoom] = useState('')
+  const [filterRooms, setFilterRooms] = useState<string[]>([])
   const [filterSubject, setFilterSubject] = useState('')
   const [filterDays, setFilterDays] = useState<DayOfWeek[]>([])
+  const [showVacantInPDF, setShowVacantInPDF] = useState(false)
 
   const toggleDay = (day: DayOfWeek) =>
     setFilterDays((prev) => prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day])
@@ -47,10 +49,7 @@ export function SchedulePage() {
     { value: '', label: 'All Teachers' },
     ...teachers.map((t) => ({ value: t.id, label: t.name })),
   ]
-  const roomOptions = [
-    { value: '', label: 'All Rooms' },
-    ...rooms.map((r) => ({ value: r.id, label: r.name })),
-  ]
+  const roomOptions = rooms.map((r) => ({ value: r.id, label: r.name }))
   const subjectOptions = [
     { value: '', label: 'All Subjects' },
     ...subjects.map((s) => ({ value: s.id, label: s.name })),
@@ -59,19 +58,30 @@ export function SchedulePage() {
   const handleExportPDF = async () => {
     const filtered = entries.filter((e) => {
       if (filterTeacher && e.teacher_id !== filterTeacher) return false
-      if (filterRoom && e.room_id !== filterRoom) return false
+      if (filterRooms.length > 0 && !filterRooms.includes(e.room_id)) return false
       if (filterSubject && e.subject_id !== filterSubject) return false
       return true
     })
     const activeTeacher = teachers.find((t) => t.id === filterTeacher)
-    const activeRoom = rooms.find((r) => r.id === filterRoom)
+    const activeRoomNames =
+      filterRooms.length > 0
+        ? rooms.filter((r) => filterRooms.includes(r.id)).map((r) => r.name).join(', ')
+        : undefined
     const activeSubject = subjects.find((s) => s.id === filterSubject)
-    const label = [activeTeacher?.name, activeSubject?.name, activeRoom?.name].filter(Boolean).join(', ')
+    const label = [activeTeacher?.name, activeSubject?.name, activeRoomNames].filter(Boolean).join(', ')
+
+    const pdfRooms = filterRooms.length > 0 ? rooms.filter((r) => filterRooms.includes(r.id)) : rooms
+
     const { generateSchedulePDF } = await import('../../lib/generateSchedulePDF')
-    generateSchedulePDF(filtered, label || undefined)
+    generateSchedulePDF(filtered, {
+      filterLabel: label || undefined,
+      showVacant: showVacantInPDF,
+      allEntries: entries,
+      rooms: pdfRooms,
+    })
   }
 
-  const hasActiveFilters = !!(filterTeacher || filterRoom || filterSubject || filterDays.length)
+  const hasActiveFilters = !!(filterTeacher || filterRooms.length || filterSubject || filterDays.length)
 
   return (
     <div>
@@ -79,7 +89,16 @@ export function SchedulePage() {
         title="Schedule"
         description="Weekly timetable — click an entry to edit"
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showVacantInPDF}
+                onChange={(e) => setShowVacantInPDF(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+              />
+              Show vacant
+            </label>
             <Button variant="secondary" onClick={handleExportPDF} disabled={entries.length === 0}>
               <FileDown size={16} /> Export PDF
             </Button>
@@ -148,17 +167,17 @@ export function SchedulePage() {
               onChange={(v) => setFilterSubject(v)}
             />
           </div>
-          <div className="w-full sm:w-40">
-            <Combobox
+          <div className="w-full sm:w-44">
+            <MultiCombobox
               placeholder="All Rooms"
               options={roomOptions}
-              value={filterRoom}
-              onChange={(v) => setFilterRoom(v)}
+              values={filterRooms}
+              onChange={setFilterRooms}
             />
           </div>
           {hasActiveFilters && (
             <button
-              onClick={() => { setFilterTeacher(''); setFilterRoom(''); setFilterSubject(''); setFilterDays([]) }}
+              onClick={() => { setFilterTeacher(''); setFilterRooms([]); setFilterSubject(''); setFilterDays([]) }}
               className="text-sm text-blue-600 hover:underline cursor-pointer"
             >
               Clear filters
@@ -175,7 +194,7 @@ export function SchedulePage() {
           onEdit={(e) => setModal(e)}
           onDelete={handleDelete}
           filterTeacherId={filterTeacher || undefined}
-          filterRoomId={filterRoom || undefined}
+          filterRoomIds={filterRooms.length ? filterRooms : undefined}
           filterSubjectId={filterSubject || undefined}
           filterDays={filterDays.length ? filterDays : undefined}
         />

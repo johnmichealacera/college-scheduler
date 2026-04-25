@@ -30,7 +30,7 @@ interface Props {
   onEdit: (entry: ScheduleEntry) => void
   onDelete: (id: string) => void
   filterTeacherId?: string
-  filterRoomId?: string
+  filterRoomIds?: string[]
   filterSubjectId?: string
   filterDays?: DayOfWeek[]
 }
@@ -92,7 +92,7 @@ interface TooltipState {
   y: number
 }
 
-export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomId, filterSubjectId, filterDays }: Props) {
+export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomIds, filterSubjectId, filterDays }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   const activeDays = useMemo(
@@ -103,11 +103,11 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
   const filtered = useMemo(() => {
     return entries.filter((e) => {
       if (filterTeacherId && e.teacher_id !== filterTeacherId) return false
-      if (filterRoomId && e.room_id !== filterRoomId) return false
+      if (filterRoomIds?.length && !filterRoomIds.includes(e.room_id)) return false
       if (filterSubjectId && e.subject_id !== filterSubjectId) return false
       return true
     })
-  }, [entries, filterTeacherId, filterRoomId, filterSubjectId])
+  }, [entries, filterTeacherId, filterRoomIds, filterSubjectId])
 
   const byDay = useMemo(() => {
     const map = new Map<DayOfWeek, ScheduleEntry[]>()
