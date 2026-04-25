@@ -29,9 +29,9 @@ interface Props {
   entries: ScheduleEntry[]
   onEdit: (entry: ScheduleEntry) => void
   onDelete: (id: string) => void
-  filterTeacherId?: string
+  filterTeacherIds?: string[]
   filterRoomIds?: string[]
-  filterSubjectId?: string
+  filterSubjectIds?: string[]
   filterDays?: DayOfWeek[]
 }
 
@@ -92,7 +92,7 @@ interface TooltipState {
   y: number
 }
 
-export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, filterRoomIds, filterSubjectId, filterDays }: Props) {
+export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, filterRoomIds, filterSubjectIds, filterDays }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   const activeDays = useMemo(
@@ -102,12 +102,12 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
 
   const filtered = useMemo(() => {
     return entries.filter((e) => {
-      if (filterTeacherId && e.teacher_id !== filterTeacherId) return false
+      if (filterTeacherIds?.length && !filterTeacherIds.includes(e.teacher_id)) return false
       if (filterRoomIds?.length && !filterRoomIds.includes(e.room_id)) return false
-      if (filterSubjectId && e.subject_id !== filterSubjectId) return false
+      if (filterSubjectIds?.length && !filterSubjectIds.includes(e.subject_id)) return false
       return true
     })
-  }, [entries, filterTeacherId, filterRoomIds, filterSubjectId])
+  }, [entries, filterTeacherIds, filterRoomIds, filterSubjectIds])
 
   const byDay = useMemo(() => {
     const map = new Map<DayOfWeek, ScheduleEntry[]>()
@@ -222,6 +222,18 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherId, fi
                             <p className="text-[10px] leading-tight truncate mt-0.5 opacity-60">
                               {formatTime(entry.start_time)} – {formatTime(entry.end_time)}
                             </p>
+                          )}
+                          {entryHeight > 50 && entry.teacher && (
+                            <div className="flex items-center gap-0.5 mt-0.5 opacity-70">
+                              <User size={9} className="shrink-0" />
+                              <p className="text-[10px] leading-tight truncate">{entry.teacher.name}</p>
+                            </div>
+                          )}
+                          {entryHeight > 66 && entry.room && (
+                            <div className="flex items-center gap-0.5 mt-0.5 opacity-70">
+                              <MapPin size={9} className="shrink-0" />
+                              <p className="text-[10px] leading-tight truncate">{entry.room.name}</p>
+                            </div>
                           )}
                         </div>
 

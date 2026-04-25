@@ -6,13 +6,14 @@ interface Option { value: string; label: string }
 
 interface MultiComboboxProps {
   placeholder?: string
+  noun?: string
   options: Option[]
   values: string[]
   onChange: (values: string[]) => void
   className?: string
 }
 
-export function MultiCombobox({ placeholder, options, values, onChange, className }: MultiComboboxProps) {
+export function MultiCombobox({ placeholder, noun = 'items', options, values, onChange, className }: MultiComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -48,7 +49,7 @@ export function MultiCombobox({ placeholder, options, values, onChange, classNam
       ? (placeholder ?? 'Select...')
       : values.length === 1
         ? (options.find((o) => o.value === values[0])?.label ?? '1 selected')
-        : `${values.length} rooms selected`
+        : `${values.length} ${noun} selected`
 
   return (
     <div className="flex flex-col gap-1" ref={containerRef}>
@@ -75,7 +76,7 @@ export function MultiCombobox({ placeholder, options, values, onChange, classNam
             <input
               ref={inputRef}
               className="flex-1 outline-none bg-transparent text-sm text-gray-900 placeholder-gray-400 min-w-0"
-              placeholder="Search rooms..."
+              placeholder={`Search ${noun}...`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Escape') { setOpen(false); setQuery('') } }}
