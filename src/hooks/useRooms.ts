@@ -49,6 +49,7 @@ export function useDeleteRoom() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [KEY] })
       qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['dspc-schedule'] })
     },
   })
 }

@@ -6,6 +6,7 @@ import { TeacherList } from './components/teachers/TeacherList'
 import { SubjectList } from './components/subjects/SubjectList'
 import { RoomList } from './components/rooms/RoomList'
 import { SchedulePage } from './components/schedule/SchedulePage'
+import { DspcScheduleView } from './components/schedule/DspcScheduleView'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/subjects" element={<SubjectList />} />
             <Route path="/rooms" element={<RoomList />} />
             <Route path="/schedule" element={<SchedulePage />} />
+            <Route path="/dspc" element={<DspcScheduleView />} />
           </Routes>
         </Layout>
       </BrowserRouter>

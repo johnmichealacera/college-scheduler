@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatTime, timeToMinutes } from './utils'
+import { formatEventDate, formatEventDateShort } from './dspc'
 import type { ScheduleEntry, Room } from '../types'
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -23,9 +24,9 @@ function minsToAMPM(mins: number): string {
   return `${displayH}:${m.toString().padStart(2, '0')} ${period}`
 }
 
-function computeVacantSlots(roomId: string, day: string, allEntries: ScheduleEntry[]): string {
+function computeVacantSlots(roomId: string, day: string, allEntries: ScheduleEntry[], useEventDate = false): string {
   const roomDayEntries = allEntries
-    .filter((e) => e.room_id === roomId && e.day === day)
+    .filter((e) => e.room_id === roomId && (useEventDate ? e.event_date === day : e.day === day))
     .sort((a, b) => timeToMinutes(a.start_time.slice(0, 5)) - timeToMinutes(b.start_time.slice(0, 5)))
 
   let current = 7 * 60
@@ -53,10 +54,18 @@ interface PDFOptions {
   showVacant?: boolean
   allEntries?: ScheduleEntry[]
   rooms?: Room[]
+  reportTitle?: string
+  countNoun?: string
+  headings?: { subject: string; teacher: string; room: string }
+  eventDates?: boolean
 }
 
 export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOptions) {
   const { filterLabel, showVacant, allEntries, rooms } = options ?? {}
+  const reportTitle = options?.reportTitle ?? 'ClassSync — Class Schedule Report'
+  const countNoun = options?.countNoun ?? 'class'
+  const headings = options?.headings ?? { subject: 'Subject', teacher: 'Teacher', room: 'Room' }
+  const eventDates = options?.eventDates === true
 
   // Strip any entries outside the allowed 7 AM – 9 PM window before rendering
   const entries = rawEntries.filter((e) => {
@@ -79,27 +88,43 @@ export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOp
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('ClassSync — Class Schedule Report', 14, 10)
+  doc.text(reportTitle, 14, 10)
 
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const subtitle = filterLabel ? `Filter: ${filterLabel}` : 'All Classes'
+  const subtitle = filterLabel ? `Filter: ${filterLabel}` : `All ${countNoun === 'class' ? 'Classes' : 'Contests'}`
   doc.text(`${subtitle}   ·   Generated ${now}`, 14, 17)
 
   // total count top-right
   doc.setFontSize(9)
-  doc.text(`${entries.length} class${entries.length !== 1 ? 'es' : ''}`, pageW - 14, 10, { align: 'right' })
+  const countSuffix = countNoun === 'class' ? (entries.length !== 1 ? 'es' : '') : (entries.length !== 1 ? 's' : '')
+  const countLabel = `${entries.length} ${countNoun}${countSuffix}`
+  doc.text(countLabel, pageW - 14, 10, { align: 'right' })
 
   // ── Summary chips ────────────────────────────────────────────────────────
-  const days = DAY_ORDER.filter((d) => entries.some((e) => e.day === d))
+  const DATE_PALETTE: [number, number, number][] = [
+    [37, 99, 235],
+    [124, 58, 237],
+    [5, 150, 105],
+    [217, 119, 6],
+    [220, 38, 38],
+    [13, 148, 136],
+    [71, 85, 105],
+  ]
+
+  const days = eventDates
+    ? [...new Set(entries.map((e) => e.event_date).filter((d): d is string => Boolean(d)))].sort()
+    : DAY_ORDER.filter((d) => entries.some((e) => e.day === d))
   let chipX = 14
   const chipY = 28
   doc.setFontSize(8)
-  for (const day of days) {
-    const count = entries.filter((e) => e.day === day).length
-    const label = `${day}: ${count}`
+  for (const [index, day] of days.entries()) {
+    const count = eventDates
+      ? entries.filter((e) => e.event_date === day).length
+      : entries.filter((e) => e.day === day).length
+    const label = eventDates ? `${formatEventDateShort(day)}: ${count}` : `${day}: ${count}`
     const w = doc.getTextWidth(label) + 6
-    const [r, g, b] = DAY_COLORS[day]
+    const [r, g, b] = eventDates ? DATE_PALETTE[index % DATE_PALETTE.length] : DAY_COLORS[day]
     doc.setFillColor(r, g, b)
     doc.roundedRect(chipX, chipY - 4, w, 6, 1.5, 1.5, 'F')
     doc.setTextColor(255, 255, 255)
@@ -110,20 +135,20 @@ export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOp
   // ── One table per day ────────────────────────────────────────────────────
   let startY = 38
 
-  for (const day of days) {
+  for (const [index, day] of days.entries()) {
     const dayEntries = entries
-      .filter((e) => e.day === day)
+      .filter((e) => (eventDates ? e.event_date === day : e.day === day))
       .sort((a, b) => a.start_time.localeCompare(b.start_time))
 
-    const [r, g, b] = DAY_COLORS[day]
+    const [r, g, b] = eventDates ? DATE_PALETTE[index % DATE_PALETTE.length] : DAY_COLORS[day]
+    const heading = eventDates ? formatEventDate(day).toUpperCase() : day.toUpperCase()
 
-    // Day heading
     doc.setFillColor(r, g, b)
     doc.roundedRect(14, startY, pageW - 28, 7, 1.5, 1.5, 'F')
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'bold')
-    doc.text(`${day.toUpperCase()}  (${dayEntries.length} class${dayEntries.length !== 1 ? 'es' : ''})`, 18, startY + 4.8)
+    doc.text(`${heading}  (${dayEntries.length} ${countNoun}${countNoun === 'class' ? (dayEntries.length !== 1 ? 'es' : '') : (dayEntries.length !== 1 ? 's' : '')})`, 18, startY + 4.8)
 
     startY += 8
 
@@ -138,7 +163,7 @@ export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOp
     autoTable(doc, {
       startY,
       margin: { left: 14, right: 14 },
-      head: [['#', 'Time', 'Subject', 'Teacher', 'Room']],
+      head: [['#', 'Time', headings.subject, headings.teacher, headings.room]],
       body: rows,
       headStyles: {
         fillColor: [248, 250, 252],
@@ -206,12 +231,14 @@ export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOp
       startY += 12
 
       // Determine which days to show: same days as occupied section, or all days
-      const vacantDays = DAY_ORDER.filter(
-        (d) => vacancyRooms.some((room) => computeVacantSlots(room.id, d, vacancySource) !== '')
-      )
+      const vacantDays = eventDates
+        ? days
+        : DAY_ORDER.filter(
+            (d) => vacancyRooms.some((room) => computeVacantSlots(room.id, d, vacancySource) !== '')
+          )
 
-      for (const day of vacantDays) {
-        const [r, g, b] = DAY_COLORS[day]
+      for (const [index, day] of vacantDays.entries()) {
+        const [r, g, b] = eventDates ? DATE_PALETTE[index % DATE_PALETTE.length] : DAY_COLORS[day]
 
         // Day heading
         doc.setFillColor(r, g, b)
@@ -219,12 +246,13 @@ export function generateSchedulePDF(rawEntries: ScheduleEntry[], options?: PDFOp
         doc.setTextColor(255, 255, 255)
         doc.setFontSize(9)
         doc.setFont('helvetica', 'bold')
-        doc.text(`${day.toUpperCase()} — Available Rooms`, 18, startY + 4.8)
+        const vacantHeading = eventDates ? formatEventDate(day) : day.toUpperCase()
+        doc.text(`${vacantHeading} — Available Rooms`, 18, startY + 4.8)
         startY += 8
 
         const vacantRows = vacancyRooms
           .map((room, i) => {
-            const slots = computeVacantSlots(room.id, day, vacancySource)
+            const slots = computeVacantSlots(room.id, day, vacancySource, eventDates)
             return slots ? [String(i + 1), room.name, slots] : null
           })
           .filter((row): row is string[] => row !== null)

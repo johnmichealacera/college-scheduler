@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
-import type { ScheduleEntry, Conflict, TimeSlot } from '../types'
+import type { DspcScheduleEntry, ScheduleEntry, Conflict, TimeSlot } from '../types'
+import { contestSlotLabel, dspcToScheduleEntry, weekdayFromIso } from './dspc'
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
@@ -79,6 +80,57 @@ export function suggestAvailableSlots(
     }
   }
   return slots
+}
+
+export function detectDspcConflicts(
+  proposed: { facilitator_id: string; room_id: string; event_date: string; start_time: string; end_time: string },
+  existing: DspcScheduleEntry[],
+  excludeId?: string
+): Conflict[] {
+  const conflicts: Conflict[] = []
+  const eventDate = proposed.event_date.slice(0, 10)
+  const candidates = existing.filter((e) => e.id !== excludeId && e.event_date.slice(0, 10) === eventDate)
+
+  for (const entry of candidates) {
+    if (!timesOverlap(proposed.start_time, proposed.end_time, entry.start_time, entry.end_time)) continue
+
+    const mapped = dspcToScheduleEntry(entry)
+
+    if (entry.facilitator_id === proposed.facilitator_id) {
+      conflicts.push({
+        type: 'facilitator',
+        message: `Facilitator is already assigned to "${contestSlotLabel(entry)}" in ${entry.room?.name ?? 'another venue'} at this time.`,
+        conflictingEntry: mapped,
+      })
+    }
+
+    if (entry.room_id === proposed.room_id) {
+      conflicts.push({
+        type: 'room',
+        message: `Venue is already booked for "${contestSlotLabel(entry)}" at this time.`,
+        conflictingEntry: mapped,
+      })
+    }
+  }
+
+  return conflicts
+}
+
+export function suggestDspcSlots(
+  existing: DspcScheduleEntry[],
+  event_date: string,
+  facilitator_id: string,
+  room_id: string,
+  durationMinutes = 60
+): TimeSlot[] {
+  const date = event_date.slice(0, 10)
+  return suggestAvailableSlots(
+    existing.filter((e) => e.event_date.slice(0, 10) === date).map(dspcToScheduleEntry),
+    weekdayFromIso(date),
+    facilitator_id,
+    room_id,
+    durationMinutes
+  )
 }
 
 export function formatTime(time: string): string {

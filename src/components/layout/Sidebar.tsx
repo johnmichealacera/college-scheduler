@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, Newspaper, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 const nav = [
@@ -8,6 +8,10 @@ const nav = [
   { to: '/subjects', icon: BookOpen, label: 'Subjects' },
   { to: '/rooms', icon: DoorOpen, label: 'Rooms' },
   { to: '/schedule', icon: Calendar, label: 'Schedule' },
+]
+
+const eventNav = [
+  { to: '/dspc', icon: Newspaper, label: 'DSPC Event' },
 ]
 
 interface SidebarProps {
@@ -74,6 +78,36 @@ export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: Sideba
                 collapsed && 'md:justify-center md:px-2',
                 isActive
                   ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              )
+            }
+          >
+            <Icon size={16} className="shrink-0" />
+            <span className={cn('whitespace-nowrap transition-all duration-300', collapsed && 'md:hidden')}>
+              {label}
+            </span>
+          </NavLink>
+        ))}
+
+        <div className={cn('mt-3 mb-1 px-3', collapsed && 'md:px-1')}>
+          <p className={cn('text-[10px] uppercase tracking-wider text-gray-500 font-semibold', collapsed && 'md:hidden')}>
+            Event
+          </p>
+          {collapsed && <div className="hidden md:block h-px bg-gray-700 mx-1" />}
+        </div>
+
+        {eventNav.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={onClose}
+            title={collapsed ? label : undefined}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                collapsed && 'md:justify-center md:px-2',
+                isActive
+                  ? 'bg-teal-600 text-white'
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white'
               )
             }

@@ -65,6 +65,7 @@ export function useDeleteTeacher() {
       qc.invalidateQueries({ queryKey: [KEY] })
       qc.invalidateQueries({ queryKey: ['subjects'] })
       qc.invalidateQueries({ queryKey: ['schedule'] })
+      qc.invalidateQueries({ queryKey: ['dspc-schedule'] })
     },
   })
 }

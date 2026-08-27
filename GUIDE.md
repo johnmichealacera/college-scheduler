@@ -6,13 +6,14 @@ A quick guide for teachers and staff on how to manage the class schedule.
 
 ## Getting Around
 
-The menu on the left side has five sections:
+The menu on the left side has these sections:
 
 - **Dashboard** — overview of today's classes and any scheduling issues
 - **Teachers** — manage the list of teachers
 - **Subjects** — manage the list of subjects
 - **Rooms** — manage the list of classrooms
-- **Schedule** — build and view the weekly timetable
+- **Schedule** — school class timetable
+- **DSPC Event** — Division Schools Press Conference contest timetable
 
 ---
 
@@ -81,3 +82,16 @@ Above the timetable there is a filter bar. Use it to view the schedule for a spe
 ## Exporting to PDF
 
 Click the **Export PDF** button at the top of the Schedule page to download the current timetable as a PDF report. If a filter is active, only the filtered classes will be included in the export.
+
+---
+
+## DSPC Event Schedule
+
+The Schedule page has a dropdown to switch between **School Classes** and **DSPC Event**. These two timetables are stored separately — adding DSPC contests does not change class attendance.
+
+Open **DSPC Event** in the sidebar, or on **Schedule** choose **DSPC Event** in the dropdown.
+
+1. Click **Add Contest Slot**.
+2. Pick a contest from the DepEd DSPC list, language (**English** or **Filipino**), and level (**Elementary** or **Secondary**).
+3. Choose a facilitator, venue, the exact calendar date (e.g. September 9, 2026), and time (e.g. 1:00–3:00 PM).
+4. The timetable columns are those dates, not weekdays. School class schedules still use Monday–Sunday.

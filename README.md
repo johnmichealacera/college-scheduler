@@ -36,6 +36,14 @@ npm install
 This app reuses your existing `instructors` and `subjects` tables.
 It only needs two new tables (`rooms` and `class_schedule`).
 
+For the **DSPC (Division Schools Press Conference)** contest scheduler, also run:
+
+```
+supabase/dspc_migration.sql
+```
+
+That creates `dspc_schedule` only — it does **not** touch class schedules or attendance.
+
 In your Supabase dashboard → **SQL Editor**, run the contents of:
 
 ```
@@ -75,6 +83,7 @@ Open [http://localhost:5173](http://localhost:5173).
 | Subjects | `subjects` | `instructor_id` column mapped to `teacher_id` in app |
 | Rooms | `rooms` | New table created by migration |
 | Schedule | `class_schedule` | New table — avoids conflict with existing `schedules` table |
+| DSPC schedule | `dspc_schedule` | Created by `dspc_migration.sql` — DepEd contests, independent of attendance |
 
 ---
 

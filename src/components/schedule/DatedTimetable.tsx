@@ -1,13 +1,10 @@
 import { useState, useMemo } from 'react'
-import { Pencil, User, MapPin, Clock, AlertTriangle } from 'lucide-react'
+import { Pencil, User, MapPin, Clock, AlertTriangle, CalendarDays } from 'lucide-react'
 import { formatTime, timesOverlap } from '../../lib/utils'
-import { DayBadge } from '../ui/Badge'
-import type { ScheduleEntry, DayOfWeek } from '../../types'
+import { formatEventDate, formatEventDateShort, weekdayFromIso } from '../../lib/dspc'
+import type { DspcScheduleEntry } from '../../types'
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7) // 7am–9pm
-const DISPLAY_DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-// Left-border accent style: light bg + strong left stripe
+const HOURS = Array.from({ length: 15 }, (_, i) => i + 7)
 const ENTRY_STYLES = [
   'bg-blue-50 border-blue-200 border-l-blue-500 text-blue-900',
   'bg-violet-50 border-violet-200 border-l-violet-500 text-violet-900',
@@ -25,35 +22,24 @@ function getStyleIndex(id: string): number {
   return hash % ENTRY_STYLES.length
 }
 
-interface Props {
-  entries: ScheduleEntry[]
-  onEdit: (entry: ScheduleEntry) => void
-  onDelete: (id: string) => void
-  filterTeacherIds?: string[]
-  filterRoomIds?: string[]
-  filterSubjectIds?: string[]
-  filterDays?: DayOfWeek[]
-  conflictEntries?: ScheduleEntry[]
-}
-
 function timeToFraction(time: string): number {
   const [h, m] = time.split(':').map(Number)
   return h + m / 60
 }
 
-function hasConflict(entry: ScheduleEntry, all: ScheduleEntry[]): boolean {
+function hasConflict(entry: DspcScheduleEntry, all: DspcScheduleEntry[]): boolean {
   return all.some(
     (e) =>
       e.id !== entry.id &&
-      e.day === entry.day &&
+      e.event_date === entry.event_date &&
       timesOverlap(entry.start_time, entry.end_time, e.start_time, e.end_time) &&
-      (e.teacher_id === entry.teacher_id || e.room_id === entry.room_id)
+      (e.facilitator_id === entry.facilitator_id || e.room_id === entry.room_id)
   )
 }
 
 interface EntryLayout { col: number; numCols: number }
 
-function computeLayout(entries: ScheduleEntry[]): Map<string, EntryLayout> {
+function computeLayout(entries: DspcScheduleEntry[]): Map<string, EntryLayout> {
   if (entries.length === 0) return new Map()
 
   const sorted = [...entries].sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -86,71 +72,74 @@ function computeLayout(entries: ScheduleEntry[]): Map<string, EntryLayout> {
   return layout
 }
 
+interface Props {
+  entries: DspcScheduleEntry[]
+  onEdit: (entry: DspcScheduleEntry) => void
+  onDelete: (id: string) => void
+  conflictEntries?: DspcScheduleEntry[]
+}
+
 interface TooltipState {
-  entry: ScheduleEntry
+  entry: DspcScheduleEntry
   conflict: boolean
   x: number
   y: number
 }
 
-export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, filterRoomIds, filterSubjectIds, filterDays, conflictEntries }: Props) {
+export function DatedTimetable({ entries, onEdit, onDelete, conflictEntries }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
-  const activeDays = useMemo(
-    () => (filterDays && filterDays.length > 0 ? DISPLAY_DAYS.filter((d) => filterDays.includes(d)) : DISPLAY_DAYS),
-    [filterDays]
+  const dates = useMemo(
+    () => [...new Set(entries.map((e) => e.event_date))].sort(),
+    [entries]
   )
 
-  const filtered = useMemo(() => {
-    return entries.filter((e) => {
-      if (filterTeacherIds?.length && !filterTeacherIds.includes(e.teacher_id)) return false
-      if (filterRoomIds?.length && !filterRoomIds.includes(e.room_id)) return false
-      if (filterSubjectIds?.length && !filterSubjectIds.includes(e.subject_id)) return false
-      return true
-    })
-  }, [entries, filterTeacherIds, filterRoomIds, filterSubjectIds])
-
-  const byDay = useMemo(() => {
-    const map = new Map<DayOfWeek, ScheduleEntry[]>()
-    for (const day of DISPLAY_DAYS) map.set(day, [])
-    for (const e of filtered) {
-      const day = e.day as DayOfWeek
-      if (DISPLAY_DAYS.includes(day)) map.get(day)!.push(e)
-    }
+  const byDate = useMemo(() => {
+    const map = new Map<string, DspcScheduleEntry[]>()
+    for (const date of dates) map.set(date, [])
+    for (const e of entries) map.get(e.event_date)?.push(e)
     return map
-  }, [filtered])
+  }, [entries, dates])
 
   const DAY_START = 7
   const DAY_END = 21
   const TOTAL_HOURS = DAY_END - DAY_START
   const ROW_HEIGHT = 60
 
+  if (dates.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-56 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400">
+        <CalendarDays size={32} className="mb-2" />
+        <p className="text-sm">No contest slots yet</p>
+        <p className="text-xs mt-1">Add a slot for a specific date and time, e.g. September 9, 1:00–3:00 PM</p>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <div style={{ minWidth: 64 + activeDays.length * 120 }}>
-          {/* Header */}
+        <div style={{ minWidth: 64 + dates.length * 160 }}>
           <div
             className="grid border-b-2 border-gray-200"
-            style={{ gridTemplateColumns: `64px repeat(${activeDays.length}, 1fr)` }}
+            style={{ gridTemplateColumns: `64px repeat(${dates.length}, 1fr)` }}
           >
             <div className="py-3" />
-            {activeDays.map((day, i) => (
+            {dates.map((date, i) => (
               <div
-                key={day}
+                key={date}
                 className={`py-3 px-2 text-center border-l-2 border-gray-200 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
               >
-                <DayBadge day={day} />
+                <p className="text-sm font-semibold text-gray-900">{formatEventDateShort(date)}</p>
+                <p className="text-[11px] text-gray-500">{weekdayFromIso(date)}</p>
               </div>
             ))}
           </div>
 
-          {/* Grid */}
           <div
             className="relative grid"
-            style={{ gridTemplateColumns: `64px repeat(${activeDays.length}, 1fr)` }}
+            style={{ gridTemplateColumns: `64px repeat(${dates.length}, 1fr)` }}
           >
-            {/* Time labels */}
             <div className="relative">
               {HOURS.map((h) => (
                 <div
@@ -164,17 +153,15 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
               <div style={{ height: TOTAL_HOURS * ROW_HEIGHT }} />
             </div>
 
-            {/* Day columns */}
-            {activeDays.map((day, i) => {
-              const dayEntries = byDay.get(day) ?? []
+            {dates.map((date, i) => {
+              const dayEntries = byDate.get(date) ?? []
               const layout = computeLayout(dayEntries)
               return (
                 <div
-                  key={day}
+                  key={date}
                   className={`relative border-l-2 border-gray-200 ${i % 2 === 0 ? 'bg-gray-50/60' : 'bg-white'}`}
                   style={{ height: TOTAL_HOURS * ROW_HEIGHT }}
                 >
-                  {/* Hour lines */}
                   {HOURS.map((h) => (
                     <div
                       key={h}
@@ -183,7 +170,6 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
                     />
                   ))}
 
-                  {/* Entries */}
                   {dayEntries.map((entry) => {
                     const top = (timeToFraction(entry.start_time) - DAY_START) * ROW_HEIGHT
                     const height = (timeToFraction(entry.end_time) - timeToFraction(entry.start_time)) * ROW_HEIGHT
@@ -194,7 +180,7 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
                     const pctWidth = (1 / numCols) * 100
                     const cardStyle = conflict
                       ? 'bg-red-50 border-red-200 border-l-red-500 text-red-900'
-                      : ENTRY_STYLES[getStyleIndex(entry.subject_id)]
+                      : ENTRY_STYLES[getStyleIndex(entry.contest)]
 
                     return (
                       <div
@@ -214,20 +200,19 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
                         }}
                         onMouseLeave={() => setTooltip(null)}
                       >
-                        {/* Text — clipped to card bounds */}
                         <div className="px-1.5 pt-1 overflow-hidden h-full">
                           <p className="text-[11px] font-semibold leading-tight truncate">
-                            {entry.subject?.name ?? '—'}
+                            {entry.contest}
                           </p>
                           {entryHeight > 36 && (
                             <p className="text-[10px] leading-tight truncate mt-0.5 opacity-60">
                               {formatTime(entry.start_time)} – {formatTime(entry.end_time)}
                             </p>
                           )}
-                          {entryHeight > 50 && entry.teacher && (
+                          {entryHeight > 50 && entry.facilitator && (
                             <div className="flex items-center gap-0.5 mt-0.5 opacity-70">
                               <User size={9} className="shrink-0" />
-                              <p className="text-[10px] leading-tight truncate">{entry.teacher.name}</p>
+                              <p className="text-[10px] leading-tight truncate">{entry.facilitator.name}</p>
                             </div>
                           )}
                           {entryHeight > 66 && entry.room && (
@@ -237,13 +222,9 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
                             </div>
                           )}
                         </div>
-
-                        {/* Conflict dot */}
                         {conflict && (
                           <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                         )}
-
-                        {/* Action buttons */}
                         <div className="absolute bottom-0.5 right-0.5 hidden group-hover:flex items-center gap-0.5">
                           <button
                             type="button"
@@ -272,7 +253,6 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
         </div>
       </div>
 
-      {/* Tooltip — fixed overlay so it's never clipped by the scroll container */}
       {tooltip && (
         <div
           className="fixed z-[100] w-56 pointer-events-none"
@@ -283,20 +263,24 @@ export function WeeklyTimetable({ entries, onEdit, onDelete, filterTeacherIds, f
         >
           <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-3">
             <p className="font-semibold text-gray-900 text-sm leading-snug mb-2.5">
-              {tooltip.entry.subject?.name ?? '—'}
+              {tooltip.entry.contest}
             </p>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs text-gray-600">
-                <User size={11} className="shrink-0 text-gray-400" />
-                <span className="truncate">{tooltip.entry.teacher?.name ?? '—'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-600">
-                <MapPin size={11} className="shrink-0 text-gray-400" />
-                <span className="truncate">{tooltip.entry.room?.name ?? '—'}</span>
+                <Clock size={11} className="shrink-0 text-gray-400" />
+                <span>{formatEventDate(tooltip.entry.event_date)}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <Clock size={11} className="shrink-0 text-gray-400" />
                 <span>{formatTime(tooltip.entry.start_time)} – {formatTime(tooltip.entry.end_time)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <User size={11} className="shrink-0 text-gray-400" />
+                <span className="truncate">{tooltip.entry.facilitator?.name ?? '—'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <MapPin size={11} className="shrink-0 text-gray-400" />
+                <span className="truncate">{tooltip.entry.room?.name ?? '—'}</span>
               </div>
             </div>
             {tooltip.conflict && (

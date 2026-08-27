@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Plus, Filter, FileDown } from 'lucide-react'
 import { useSchedule, useDeleteScheduleEntry } from '../../hooks/useSchedule'
 import { useTeachers } from '../../hooks/useTeachers'
@@ -9,11 +9,16 @@ import { MultiCombobox } from '../ui/MultiCombobox'
 import { Modal } from '../ui/Modal'
 import { WeeklyTimetable } from './WeeklyTimetable'
 import { ScheduleForm } from './ScheduleForm'
+import { ScheduleViewSwitcher } from './ScheduleViewSwitcher'
 import { PageHeader } from '../layout/PageHeader'
 import type { ScheduleEntry, DayOfWeek } from '../../types'
 import { DAYS } from '../../types'
 
 export function SchedulePage() {
+  return <SchoolScheduleView switcher={<ScheduleViewSwitcher />} />
+}
+
+function SchoolScheduleView({ switcher }: { switcher: ReactNode }) {
   const { data: entries = [], isLoading } = useSchedule()
   const { data: teachers = [] } = useTeachers()
   const { data: rooms = [] } = useRooms()
@@ -89,6 +94,7 @@ export function SchedulePage() {
         description="Weekly timetable — click an entry to edit"
         action={
           <div className="flex flex-wrap gap-2 items-center">
+            {switcher}
             <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
               <input
                 type="checkbox"
