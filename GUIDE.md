@@ -87,11 +87,15 @@ Click the **Export PDF** button at the top of the Schedule page to download the 
 
 ## DSPC Event Schedule
 
-The Schedule page has a dropdown to switch between **School Classes** and **DSPC Event**. These two timetables are stored separately — adding DSPC contests does not change class attendance.
+A full step-by-step guide for coordinators and management (facilitators, venues, dates, conflicts, PDF) is in:
 
-Open **DSPC Event** in the sidebar, or on **Schedule** choose **DSPC Event** in the dropdown.
+**[DSPC_GUIDE.md](./DSPC_GUIDE.md)**
 
-1. Click **Add Contest Slot**.
-2. Pick a contest from the DepEd DSPC list, language (**English** or **Filipino**), and level (**Elementary** or **Secondary**).
-3. Choose a facilitator, venue, the exact calendar date (e.g. September 9, 2026), and time (e.g. 1:00–3:00 PM).
-4. The timetable columns are those dates, not weekdays. School class schedules still use Monday–Sunday.
+Send that file to staff who will encode the Division Schools Press Conference timetable.
+
+Short version:
+
+1. Add facilitators under **Teachers** and venues under **Rooms**.
+2. Open **DSPC Event**.
+3. Click **Add Contest Slot** and pick contest, language, level, facilitator, venue, exact date, and time.
+4. DSPC does not change school class schedules or attendance.
