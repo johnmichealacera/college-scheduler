@@ -11,7 +11,7 @@ This guide is for coordinators and staff who will encode the DSPC contest timeta
 
 Use **DSPC Event** to assign each contest to:
 
-- a **facilitator**
+- a **facilitator**, or **TBA** if that person is still being arranged
 - a **venue** (room)
 - an **exact date** (example: September 9, 2026)
 - a **time** (example: 1:00 PM – 3:00 PM)
@@ -32,9 +32,11 @@ You can schedule the same contest more than once (for example, News Writing — 
 
 ---
 
-## Step 1 — Add facilitators
+## Step 1 — Add facilitators (when known)
 
-Facilitators must exist before you can put them on a contest slot.
+Facilitators come from **Teachers**. You can encode contest slots first and choose **TBA (still to be arranged)** until names are confirmed.
+
+When you know who will handle a contest:
 
 1. Open **Teachers** in the left menu.
 2. Click **Add Teacher**.
@@ -46,7 +48,7 @@ Repeat for every person who will handle a contest.
 | Action | How |
 |---|---|
 | Edit a name | Click the pencil icon |
-| Remove a facilitator | Click the trash icon only if that person is not needed anywhere. Removing them also deletes their DSPC slots **and** any regular class assignments they have. |
+| Remove a facilitator | Click the trash icon only if that person is not needed anywhere. Removing them sets their DSPC slots to **TBA**. It also removes any regular class assignments they have. |
 
 School teachers already in the list can be used as DSPC facilitators. You do not need to add them twice.
 
@@ -91,12 +93,14 @@ The DSPC grid shows **calendar dates as columns** (Sep 9, Sep 10, …), not Mond
 | **Contest** | One event from the official DSPC list | News Writing |
 | **Language** | English or Filipino | English |
 | **Level** | Elementary or Secondary | Secondary |
-| **Facilitator** | Person in charge of that slot | Maria Santos |
+| **Facilitator** | A teacher, or **TBA (still to be arranged)** if not yet assigned | TBA, or Maria Santos |
 | **Venue** | Room or hall | Audio-Visual Room |
 | **Date** | Exact calendar date | 2026-09-09 (September 9, 2026) |
 | **Start / End time** | Philippine time, between 7:00 AM and 9:00 PM | 1:00 PM – 3:00 PM |
 
 Times use **Philippine Standard Time (GMT+8)**.
+
+The facilitator field defaults to **TBA**. Leave it as TBA when the person is still being arranged. Change it later by clicking the slot and picking a teacher.
 
 ### Official contest list
 
@@ -172,8 +176,10 @@ Deleting a DSPC slot does **not** change school classes or attendance.
 
 You cannot save if:
 
-- the **same facilitator** is already assigned at that date and overlapping time, or
+- an **assigned facilitator** (not TBA) is already booked at that date and overlapping time, or
 - the **same venue** is already booked at that date and overlapping time
+
+Slots marked **TBA** do not conflict with each other on facilitator. They can still conflict if they share a venue.
 
 A red warning appears before you save. Suggested free times are shown as buttons — click one to fill the time automatically.
 
@@ -190,7 +196,7 @@ Above the grid you can narrow the view:
 - **From / To** — show only slots in a date range  
 - **Language** — English or Filipino  
 - **Level** — Elementary or Secondary  
-- **Contest / Facilitator / Venue** — pick one or more  
+- **Contest / Facilitator / Venue** — pick one or more. Choose **TBA** in Facilitator to see slots still waiting for a name.  
 
 Click **Clear filters** to see everything again.
 
@@ -219,7 +225,7 @@ The file is a contest schedule for **Division of Siargao**, grouped by calendar 
 4. Contest: **News Writing**.  
 5. Language: **English**.  
 6. Level: **Secondary**.  
-7. Facilitator: **Maria Santos**.  
+7. Facilitator: **TBA (still to be arranged)** if the name is not yet known, or **Maria Santos** if it is.  
 8. Venue: **AVR**.  
 9. Date: **September 9, 2026**.  
 10. Start **13:00**, End **15:00**.  
@@ -240,7 +246,7 @@ The block should appear on the **Sep 9** column from 1:00 PM to 3:00 PM.
 
 ## Quick checklist for management
 
-- [ ] All facilitators are encoded under **Teachers**  
+- [ ] Facilitators who are known are encoded under **Teachers**; others are set to **TBA**  
 - [ ] All venues are encoded under **Rooms**  
 - [ ] Every contest needed that day has a slot (contest + language + level)  
 - [ ] Dates are the actual event dates, not weekdays  
@@ -255,7 +261,8 @@ The block should appear on the **Sep 9** column from 1:00 PM to 3:00 PM.
 |---|---|
 | No **DSPC Event** in the menu | Refresh the page. If it still missing, contact IT. |
 | Yellow banner about SQL / tables | Contact the system administrator. Encoding will not save until setup is complete. |
-| Facilitator does not appear in the dropdown | Add them first under **Teachers**, then return to DSPC Event. |
+| Saving with **TBA** fails | Ask the administrator to run `supabase/dspc_facilitator_optional.sql` in the Supabase SQL Editor, then refresh. |
+| Facilitator does not appear in the dropdown | Add them first under **Teachers**, then return to DSPC Event. Until then, choose **TBA**. |
 | Venue does not appear | Add it first under **Rooms**. |
 | Cannot save | Read the red conflict message. Change time, venue, or facilitator, or click a suggested slot. |
 | Time rejected | Use 7:00 AM to 9:00 PM only. End time must be after start time. |

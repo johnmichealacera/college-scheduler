@@ -41,7 +41,7 @@ export interface CreateDspcSchedulePayload {
   contest: ContestCategory
   language: LanguageOption
   level: LevelOption
-  facilitator_id: string
+  facilitator_id: string | null
   room_id: string
   event_date: string
   start_time: string

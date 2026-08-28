@@ -1,4 +1,5 @@
 import {
+  DSPC_FACILITATOR_TBA,
   LANGUAGE_LABELS,
   LEVEL_LABELS,
   type DayOfWeek,
@@ -44,6 +45,19 @@ export function contestSlotLabel(entry: DspcScheduleEntry): string {
   return `${entry.contest} · ${LANGUAGE_LABELS[entry.language]} · ${LEVEL_LABELS[entry.level]}`
 }
 
+export function toStoredFacilitatorId(value: string): string | null {
+  if (!value || value === DSPC_FACILITATOR_TBA) return null
+  return value
+}
+
+export function facilitatorFormValue(facilitatorId: string | null | undefined): string {
+  return facilitatorId ?? DSPC_FACILITATOR_TBA
+}
+
+export function facilitatorDisplayName(entry: Pick<DspcScheduleEntry, 'facilitator'>): string {
+  return entry.facilitator?.name ?? DSPC_FACILITATOR_TBA
+}
+
 export function shortLevel(level: LevelOption): string {
   switch (level) {
     case 'ELEMENTARY':
@@ -75,14 +89,14 @@ export function dspcToScheduleEntry(entry: DspcScheduleEntry): ScheduleEntry {
   return {
     id: entry.id,
     subject_id: entry.contest,
-    teacher_id: entry.facilitator_id,
+    teacher_id: entry.facilitator_id ?? '',
     room_id: entry.room_id,
     day: weekdayFromIso(entry.event_date),
     event_date: entry.event_date.slice(0, 10),
     start_time: entry.start_time,
     end_time: entry.end_time,
     subject: { id: entry.contest, name: title, teacher_id: null, created_at: entry.created_at },
-    teacher: entry.facilitator,
+    teacher: entry.facilitator ?? { id: DSPC_FACILITATOR_TBA, name: DSPC_FACILITATOR_TBA, created_at: entry.created_at },
     room: entry.room,
     created_at: entry.created_at,
   }

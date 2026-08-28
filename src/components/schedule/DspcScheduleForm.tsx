@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,9 +11,11 @@ import { useTeachers } from '../../hooks/useTeachers'
 import { useRooms } from '../../hooks/useRooms'
 import { useCreateDspcScheduleEntry, useUpdateDspcScheduleEntry } from '../../hooks/useDspcSchedule'
 import { cn, detectDspcConflicts, suggestDspcSlots, timeToMinutes } from '../../lib/utils'
-import { formatEventDate, toIsoDate } from '../../lib/dspc'
+import { formatEventDate, facilitatorFormValue, toIsoDate, toStoredFacilitatorId } from '../../lib/dspc'
 import {
   CONTEST_CATEGORIES,
+  DSPC_FACILITATOR_TBA,
+  DSPC_FACILITATOR_TBA_LABEL,
   LANGUAGE_LABELS,
   LANGUAGE_OPTIONS,
   LEVEL_LABELS,
@@ -29,7 +31,7 @@ const schema = z.object({
   contest: z.enum(CONTEST_CATEGORIES),
   language: z.enum(LANGUAGE_OPTIONS),
   level: z.enum(LEVEL_OPTIONS),
-  facilitator_id: z.string().min(1, 'Please select a facilitator'),
+  facilitator_id: z.string(),
   room_id: z.string().min(1, 'Please select a venue'),
   dates: z.array(z.string().regex(ISO_DATE, 'Pick a valid date')).min(1, 'Please pick at least one date'),
   start_time: z.string()
@@ -57,6 +59,7 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
   const { data: rooms } = useRooms()
   const create = useCreateDspcScheduleEntry()
   const update = useUpdateDspcScheduleEntry()
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const { register, handleSubmit, watch, setValue, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -64,7 +67,7 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
       contest: entry?.contest ?? CONTEST_CATEGORIES[0],
       language: entry?.language ?? 'ENGLISH',
       level: entry?.level ?? 'SECONDARY',
-      facilitator_id: entry?.facilitator_id ?? '',
+      facilitator_id: facilitatorFormValue(entry?.facilitator_id),
       room_id: entry?.room_id ?? '',
       dates: entry?.event_date ? [entry.event_date.slice(0, 10)] : [toIsoDate(new Date())],
       start_time: entry?.start_time?.slice(0, 5) ?? '',
@@ -78,7 +81,7 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
         contest: entry.contest,
         language: entry.language,
         level: entry.level,
-        facilitator_id: entry.facilitator_id,
+        facilitator_id: facilitatorFormValue(entry.facilitator_id),
         room_id: entry.room_id,
         dates: [entry.event_date.slice(0, 10)],
         start_time: entry.start_time.slice(0, 5),
@@ -94,12 +97,13 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
   const selectedDates = watchedDates ?? []
 
   const conflicts = useMemo(() => {
-    if (!facilitator_id || !room_id || !selectedDates.length || !start_time || !end_time) return []
+    if (!room_id || !selectedDates.length || !start_time || !end_time) return []
+    const storedFacilitatorId = toStoredFacilitatorId(facilitator_id)
     const multiDate = selectedDates.length > 1
     return selectedDates.flatMap((event_date) => {
       if (!ISO_DATE.test(event_date)) return []
       const dayConflicts = detectDspcConflicts(
-        { facilitator_id, room_id, event_date, start_time, end_time },
+        { facilitator_id: storedFacilitatorId, room_id, event_date, start_time, end_time },
         allEntries,
         entry?.id,
       )
@@ -109,16 +113,21 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
   }, [facilitator_id, room_id, selectedDates, start_time, end_time, allEntries, entry?.id])
 
   const suggestedSlots = useMemo((): TimeSlot[] => {
-    if (!conflicts.length || !facilitator_id || !room_id || !start_time || !end_time) return []
+    if (!conflicts.length || !room_id || !start_time || !end_time) return []
     const duration = timeToMinutes(end_time) - timeToMinutes(start_time)
     if (duration <= 0) return []
+    const storedFacilitatorId = toStoredFacilitatorId(facilitator_id)
     const firstConflictDate = selectedDates.find(
       (event_date) =>
         ISO_DATE.test(event_date) &&
-        detectDspcConflicts({ facilitator_id, room_id, event_date, start_time, end_time }, allEntries, entry?.id).length > 0
+        detectDspcConflicts(
+          { facilitator_id: storedFacilitatorId, room_id, event_date, start_time, end_time },
+          allEntries,
+          entry?.id,
+        ).length > 0
     )
     if (!firstConflictDate) return []
-    return suggestDspcSlots(allEntries, firstConflictDate, facilitator_id, room_id, duration)
+    return suggestDspcSlots(allEntries, firstConflictDate, storedFacilitatorId, room_id, duration)
   }, [conflicts.length, allEntries, selectedDates, facilitator_id, room_id, start_time, end_time, entry?.id])
 
   const handleSelectSlot = (slot: TimeSlot) => {
@@ -128,17 +137,34 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
 
   const onSubmit = async (data: FormValues) => {
     if (conflicts.length) return
-    const { dates, ...rest } = data
-    if (entry) {
-      await update.mutateAsync({ id: entry.id, ...rest, event_date: dates[0] })
-    } else {
-      await Promise.all(dates.map((event_date) => create.mutateAsync({ ...rest, event_date })))
+    setSubmitError(null)
+    const { dates, facilitator_id, ...rest } = data
+    const payload = { ...rest, facilitator_id: toStoredFacilitatorId(facilitator_id) }
+    try {
+      if (entry) {
+        await update.mutateAsync({ id: entry.id, ...payload, event_date: dates[0] })
+      } else {
+        await Promise.all(dates.map((event_date) => create.mutateAsync({ ...payload, event_date })))
+      }
+      onSuccess()
+    } catch (error) {
+      const message =
+        typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+          ? error.message
+          : 'Could not save this contest slot.'
+      if (message.includes('facilitator_id') && message.includes('null')) {
+        setSubmitError('TBA facilitators need a one-time database update. Run supabase/dspc_facilitator_optional.sql in the Supabase SQL Editor, then try again.')
+        return
+      }
+      setSubmitError(message)
     }
-    onSuccess()
   }
 
   const contestOptions = CONTEST_CATEGORIES.map((c) => ({ value: c, label: c }))
-  const facilitatorOptions = (teachers ?? []).map((t) => ({ value: t.id, label: t.name }))
+  const facilitatorOptions = [
+    { value: DSPC_FACILITATOR_TBA, label: DSPC_FACILITATOR_TBA_LABEL },
+    ...(teachers ?? []).map((t) => ({ value: t.id, label: t.name })),
+  ]
   const roomOptions = (rooms ?? []).map((r) => ({ value: r.id, label: r.name }))
 
   const isPending = create.isPending || update.isPending
@@ -147,6 +173,11 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      {submitError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {submitError}
+        </div>
+      )}
       {hasConflict && (
         <ConflictAlert
           conflicts={conflicts}
@@ -200,14 +231,17 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
         name="facilitator_id"
         control={control}
         render={({ field }) => (
-          <Combobox
-            label="Facilitator"
-            placeholder="Select a facilitator"
-            options={facilitatorOptions}
-            value={field.value}
-            onChange={field.onChange}
-            error={errors.facilitator_id?.message}
-          />
+          <div className="flex flex-col gap-1">
+            <Combobox
+              label="Facilitator"
+              placeholder={DSPC_FACILITATOR_TBA_LABEL}
+              options={facilitatorOptions}
+              value={field.value || DSPC_FACILITATOR_TBA}
+              onChange={(value) => field.onChange(value || DSPC_FACILITATOR_TBA)}
+              error={errors.facilitator_id?.message}
+            />
+            <p className="text-xs text-gray-400">Select TBA if the facilitator is still to be arranged.</p>
+          </div>
         )}
       />
       <Controller

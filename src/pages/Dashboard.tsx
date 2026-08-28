@@ -8,7 +8,7 @@ import { useDspcSchedule } from '../hooks/useDspcSchedule'
 import { timesOverlap } from '../lib/utils'
 import { DayBadge } from '../components/ui/Badge'
 import { formatTime } from '../lib/utils'
-import { contestSlotLabel, formatEventDateShort } from '../lib/dspc'
+import { contestSlotLabel, facilitatorDisplayName, formatEventDateShort } from '../lib/dspc'
 
 function StatCard({
   label,
@@ -178,7 +178,7 @@ export function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{contestSlotLabel(e)}</p>
-                      <p className="text-xs text-gray-400 truncate">{e.facilitator?.name} · {e.room?.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{facilitatorDisplayName(e)} · {e.room?.name}</p>
                     </div>
                   </li>
                 ))}

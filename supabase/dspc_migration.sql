@@ -1,6 +1,8 @@
 -- DSPC (Division Schools Press Conference) schedule.
 -- Completely separate from class_schedule / subjects / attendance.
 -- Safe to re-run. Drops previous DSPC tables if they exist.
+-- If DSPC is already in use, do not re-run this file.
+-- To allow TBA facilitators on an existing table, run dspc_facilitator_optional.sql instead.
 
 DROP TABLE IF EXISTS dspc_schedule;
 DROP TABLE IF EXISTS dspc_contests;
@@ -24,7 +26,7 @@ CREATE TABLE dspc_schedule (
   )),
   language text NOT NULL CHECK (language IN ('ENGLISH', 'FILIPINO')),
   level text NOT NULL CHECK (level IN ('ELEMENTARY', 'SECONDARY')),
-  facilitator_id uuid REFERENCES instructors(id) ON DELETE CASCADE NOT NULL,
+  facilitator_id uuid REFERENCES instructors(id) ON DELETE SET NULL,
   room_id uuid REFERENCES rooms(id) ON DELETE CASCADE NOT NULL,
   event_date date NOT NULL,
   start_time time NOT NULL,

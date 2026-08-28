@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Pencil, User, MapPin, Clock, AlertTriangle, CalendarDays } from 'lucide-react'
-import { formatTime, timesOverlap } from '../../lib/utils'
-import { formatEventDate, formatEventDateShort, weekdayFromIso } from '../../lib/dspc'
+import { formatTime, timesOverlap, assignedFacilitatorsClash } from '../../lib/utils'
+import { facilitatorDisplayName, formatEventDate, formatEventDateShort, weekdayFromIso } from '../../lib/dspc'
 import type { DspcScheduleEntry } from '../../types'
 
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7)
@@ -33,7 +33,7 @@ function hasConflict(entry: DspcScheduleEntry, all: DspcScheduleEntry[]): boolea
       e.id !== entry.id &&
       e.event_date === entry.event_date &&
       timesOverlap(entry.start_time, entry.end_time, e.start_time, e.end_time) &&
-      (e.facilitator_id === entry.facilitator_id || e.room_id === entry.room_id)
+      (assignedFacilitatorsClash(e.facilitator_id, entry.facilitator_id) || e.room_id === entry.room_id)
   )
 }
 
@@ -209,10 +209,10 @@ export function DatedTimetable({ entries, onEdit, onDelete, conflictEntries }: P
                               {formatTime(entry.start_time)} – {formatTime(entry.end_time)}
                             </p>
                           )}
-                          {entryHeight > 50 && entry.facilitator && (
+                          {entryHeight > 50 && (
                             <div className="flex items-center gap-0.5 mt-0.5 opacity-70">
                               <User size={9} className="shrink-0" />
-                              <p className="text-[10px] leading-tight truncate">{entry.facilitator.name}</p>
+                              <p className="text-[10px] leading-tight truncate">{facilitatorDisplayName(entry)}</p>
                             </div>
                           )}
                           {entryHeight > 66 && entry.room && (
@@ -276,7 +276,7 @@ export function DatedTimetable({ entries, onEdit, onDelete, conflictEntries }: P
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <User size={11} className="shrink-0 text-gray-400" />
-                <span className="truncate">{tooltip.entry.facilitator?.name ?? '—'}</span>
+                <span className="truncate">{facilitatorDisplayName(tooltip.entry)}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <MapPin size={11} className="shrink-0 text-gray-400" />

@@ -97,5 +97,5 @@ Short version:
 
 1. Add facilitators under **Teachers** and venues under **Rooms**.
 2. Open **DSPC Event**.
-3. Click **Add Contest Slot** and pick contest, language, level, facilitator, venue, exact date, and time.
+3. Click **Add Contest Slot** and pick contest, language, level, facilitator (or **TBA**), venue, exact date, and time.
 4. DSPC does not change school class schedules or attendance.

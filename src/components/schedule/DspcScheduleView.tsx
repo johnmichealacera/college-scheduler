@@ -11,10 +11,13 @@ import { DatedTimetable } from './DatedTimetable'
 import { DspcScheduleForm } from './DspcScheduleForm'
 import { ScheduleViewSwitcher } from './ScheduleViewSwitcher'
 import { PageHeader } from '../layout/PageHeader'
+import { assignedFacilitatorsClash } from '../../lib/utils'
 import { dspcToScheduleEntry } from '../../lib/dspc'
 import {
   CONTEST_CATEGORIES,
   DEFAULT_DIVISION,
+  DSPC_FACILITATOR_TBA,
+  DSPC_FACILITATOR_TBA_LABEL,
   LANGUAGE_LABELS,
   LANGUAGE_OPTIONS,
   LEVEL_LABELS,
@@ -55,7 +58,13 @@ export function DspcScheduleView({ switcher = <ScheduleViewSwitcher /> }: Props)
   const matchesFilters = (e: DspcScheduleEntry) => {
     if (filterLevels.length > 0 && !filterLevels.includes(e.level)) return false
     if (filterLanguages.length > 0 && !filterLanguages.includes(e.language)) return false
-    if (filterFacilitators.length > 0 && !filterFacilitators.includes(e.facilitator_id)) return false
+    if (filterFacilitators.length > 0) {
+      const wantsTba = filterFacilitators.includes(DSPC_FACILITATOR_TBA)
+      const assignedIds = filterFacilitators.filter((id) => id !== DSPC_FACILITATOR_TBA)
+      const matchesTba = wantsTba && !e.facilitator_id
+      const matchesAssigned = Boolean(e.facilitator_id && assignedIds.includes(e.facilitator_id))
+      if (!matchesTba && !matchesAssigned) return false
+    }
     if (filterRooms.length > 0 && !filterRooms.includes(e.room_id)) return false
     if (filterContests.length > 0 && !filterContests.includes(e.contest)) return false
     if (filterDateFrom && e.event_date < filterDateFrom) return false
@@ -70,12 +79,15 @@ export function DspcScheduleView({ switcher = <ScheduleViewSwitcher /> }: Props)
       (o) =>
         o.id !== e.id &&
         o.event_date === e.event_date &&
-        (o.facilitator_id === e.facilitator_id || o.room_id === e.room_id) &&
+        (assignedFacilitatorsClash(o.facilitator_id, e.facilitator_id) || o.room_id === e.room_id) &&
         e.start_time < o.end_time && o.start_time < e.end_time
     )
   ).length
 
-  const facilitatorOptions = teachers.map((t) => ({ value: t.id, label: t.name }))
+  const facilitatorOptions = [
+    { value: DSPC_FACILITATOR_TBA, label: DSPC_FACILITATOR_TBA },
+    ...teachers.map((t) => ({ value: t.id, label: t.name })),
+  ]
   const roomOptions = rooms.map((r) => ({ value: r.id, label: r.name }))
   const contestOptions = CONTEST_CATEGORIES.map((c) => ({ value: c, label: c }))
 
@@ -83,7 +95,14 @@ export function DspcScheduleView({ switcher = <ScheduleViewSwitcher /> }: Props)
     const filtered = visibleEntries.map(dspcToScheduleEntry)
     const activeFacilitatorNames =
       filterFacilitators.length > 0
-        ? teachers.filter((t) => filterFacilitators.includes(t.id)).map((t) => t.name).join(', ')
+        ? filterFacilitators
+            .map((id) =>
+              id === DSPC_FACILITATOR_TBA
+                ? DSPC_FACILITATOR_TBA_LABEL
+                : teachers.find((t) => t.id === id)?.name
+            )
+            .filter((name): name is string => Boolean(name))
+            .join(', ')
         : undefined
     const activeRoomNames =
       filterRooms.length > 0

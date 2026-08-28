@@ -82,8 +82,12 @@ export function suggestAvailableSlots(
   return slots
 }
 
+export function assignedFacilitatorsClash(a: string | null | undefined, b: string | null | undefined): boolean {
+  return Boolean(a) && a === b
+}
+
 export function detectDspcConflicts(
-  proposed: { facilitator_id: string; room_id: string; event_date: string; start_time: string; end_time: string },
+  proposed: { facilitator_id: string | null; room_id: string; event_date: string; start_time: string; end_time: string },
   existing: DspcScheduleEntry[],
   excludeId?: string
 ): Conflict[] {
@@ -96,7 +100,7 @@ export function detectDspcConflicts(
 
     const mapped = dspcToScheduleEntry(entry)
 
-    if (entry.facilitator_id === proposed.facilitator_id) {
+    if (assignedFacilitatorsClash(entry.facilitator_id, proposed.facilitator_id)) {
       conflicts.push({
         type: 'facilitator',
         message: `Facilitator is already assigned to "${contestSlotLabel(entry)}" in ${entry.room?.name ?? 'another venue'} at this time.`,
@@ -119,7 +123,7 @@ export function detectDspcConflicts(
 export function suggestDspcSlots(
   existing: DspcScheduleEntry[],
   event_date: string,
-  facilitator_id: string,
+  facilitator_id: string | null,
   room_id: string,
   durationMinutes = 60
 ): TimeSlot[] {
@@ -127,7 +131,7 @@ export function suggestDspcSlots(
   return suggestAvailableSlots(
     existing.filter((e) => e.event_date.slice(0, 10) === date).map(dspcToScheduleEntry),
     weekdayFromIso(date),
-    facilitator_id,
+    facilitator_id ?? '__tba__',
     room_id,
     durationMinutes
   )

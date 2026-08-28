@@ -88,12 +88,15 @@ export const LANGUAGE_LABELS: Record<LanguageOption, string> = {
   FILIPINO: 'Filipino',
 }
 
+export const DSPC_FACILITATOR_TBA = 'TBA'
+export const DSPC_FACILITATOR_TBA_LABEL = 'TBA (still to be arranged)'
+
 export interface DspcScheduleEntry {
   id: string
   contest: ContestCategory
   language: LanguageOption
   level: LevelOption
-  facilitator_id: string
+  facilitator_id: string | null
   room_id: string
   event_date: string
   start_time: string
