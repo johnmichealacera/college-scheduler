@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="7" fill="#2563eb"/>
+  <!-- Calendar body -->
+  <rect x="6" y="10" width="20" height="16" rx="2" fill="white" fill-opacity="0.15"/>
+  <rect x="6" y="10" width="20" height="16" rx="2" stroke="white" stroke-width="1.5"/>
+  <!-- Header bar -->
+  <rect x="6" y="10" width="20" height="6" rx="2" fill="white" fill-opacity="0.25"/>
+  <!-- Binding pegs -->
+  <rect x="11" y="7" width="2" height="5" rx="1" fill="white"/>
+  <rect x="19" y="7" width="2" height="5" rx="1" fill="white"/>
+  <!-- Grid dots (schedule cells) -->
+  <rect x="9"  y="20" width="3" height="2" rx="0.5" fill="white" fill-opacity="0.9"/>
+  <rect x="14" y="20" width="5" height="2" rx="0.5" fill="white" fill-opacity="0.6"/>
+  <rect x="21" y="20" width="3" height="2" rx="0.5" fill="white" fill-opacity="0.9"/>
+  <rect x="9"  y="23" width="5" height="2" rx="0.5" fill="white" fill-opacity="0.6"/>
+  <rect x="16" y="23" width="3" height="2" rx="0.5" fill="white" fill-opacity="0.9"/>
+</svg>
