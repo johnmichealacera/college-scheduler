@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { dateToIsoDateString, dateToTimeString, isoDateToDate, timeStringToDate } from '@/lib/time'
+import { requireSession } from '@/lib/api-auth'
 
 const include = { facilitator: true, room: true } as const
 
@@ -26,6 +27,9 @@ function serialize<T extends { eventDate: Date; startTime: Date; endTime: Date }
 }
 
 export async function GET() {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const entries = await db.dspcSchedule.findMany({
     orderBy: [{ eventDate: 'asc' }, { startTime: 'asc' }],
     include,
@@ -34,6 +38,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const body = createSchema.parse(await request.json())
   const entry = await db.dspcSchedule.create({
     data: {

@@ -37,6 +37,13 @@ datasource db {
 // Supabase rows insertable verbatim with no value-translation step, and
 // keeps this a faithful port rather than a redesign.
 
+// No local User model. Login authenticates against bgfc-attendance-qr-webapp's
+// existing public.users table (see src/lib/auth.ts) via a raw SQL read — not a
+// declared Prisma model, since adding "public" to this schema's `schemas`
+// list above would make prisma db push start reconciling ALL of bgfc's public
+// tables against whatever subset we declare, which is exactly the
+// data-loss risk the "scheduler" schema split was built to prevent.
+
 model Instructor {
   id        String   @id @default(cuid())
   fullName  String   @map("full_name")

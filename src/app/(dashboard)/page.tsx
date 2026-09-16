@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { Users, BookOpen, DoorOpen, Calendar, AlertTriangle, ArrowRight, Newspaper } from 'lucide-react'
-import { useTeachers } from '../hooks/useTeachers'
-import { useSubjects } from '../hooks/useSubjects'
-import { useRooms } from '../hooks/useRooms'
-import { useSchedule } from '../hooks/useSchedule'
-import { useDspcSchedule } from '../hooks/useDspcSchedule'
-import { timesOverlap } from '../lib/utils'
-import { DayBadge } from '../components/ui/Badge'
-import { formatTime } from '../lib/utils'
-import { contestSlotLabel, facilitatorDisplayName, formatEventDateShort } from '../lib/dspc'
+import { useTeachers } from '@/hooks/useTeachers'
+import { useSubjects } from '@/hooks/useSubjects'
+import { useRooms } from '@/hooks/useRooms'
+import { useSchedule } from '@/hooks/useSchedule'
+import { useDspcSchedule } from '@/hooks/useDspcSchedule'
+import { timesOverlap } from '@/lib/utils'
+import { DayBadge } from '@/components/ui/Badge'
+import { formatTime } from '@/lib/utils'
+import { contestSlotLabel, facilitatorDisplayName, formatEventDateShort } from '@/lib/dspc'
 
 function StatCard({
   label,

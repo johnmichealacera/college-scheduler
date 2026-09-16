@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { dateToIsoDateString, dateToTimeString, isoDateToDate, timeStringToDate } from '@/lib/time'
+import { requireSession } from '@/lib/api-auth'
 
 const include = { facilitator: true, room: true } as const
 
@@ -30,6 +31,9 @@ interface RouteParams {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const { id } = await params
   const body = updateSchema.parse(await request.json())
   const entry = await db.dspcSchedule.update({
@@ -50,6 +54,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const { id } = await params
   await db.dspcSchedule.delete({ where: { id } })
   return new NextResponse(null, { status: 204 })

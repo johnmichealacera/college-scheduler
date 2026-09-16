@@ -7,9 +7,10 @@ import { cn } from '../../lib/utils'
 
 interface LayoutProps {
   children: ReactNode
+  email?: string
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, email }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
@@ -27,6 +28,7 @@ export function Layout({ children }: LayoutProps) {
         onClose={() => setSidebarOpen(false)}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}
+        email={email}
       />
 
       <main className={cn('flex-1 min-w-0 transition-all duration-300', collapsed ? 'md:ml-14' : 'md:ml-56')}>

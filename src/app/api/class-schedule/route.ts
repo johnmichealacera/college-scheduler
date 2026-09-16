@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { dateToTimeString, timeStringToDate } from '@/lib/time'
+import { requireSession } from '@/lib/api-auth'
 
 const include = { subject: true, teacher: true, room: true } as const
 
@@ -23,6 +24,9 @@ function serialize<T extends { startTime: Date; endTime: Date }>(entry: T) {
 }
 
 export async function GET() {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const entries = await db.classSchedule.findMany({
     orderBy: [{ day: 'asc' }, { startTime: 'asc' }],
     include,
@@ -31,6 +35,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const body = createSchema.parse(await request.json())
   const entry = await db.classSchedule.create({
     data: {

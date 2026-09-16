@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { requireSession } from '@/lib/api-auth'
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -8,6 +9,9 @@ const createSchema = z.object({
 })
 
 export async function GET() {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const subjects = await db.subject.findMany({
     orderBy: { name: 'asc' },
     include: {
@@ -18,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { unauthorized } = await requireSession()
+  if (unauthorized) return unauthorized
+
   const body = createSchema.parse(await request.json())
   const subject = await db.subject.create({
     data: {

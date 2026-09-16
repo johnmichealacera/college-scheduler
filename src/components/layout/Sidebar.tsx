@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, Newspaper, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { SignOutButton } from './SignOutButton'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -22,9 +23,10 @@ interface SidebarProps {
   onClose?: () => void
   collapsed?: boolean
   onToggleCollapse?: () => void
+  email?: string
 }
 
-export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, email }: SidebarProps) {
   const pathname = usePathname()
   const isNavActive = (to: string, end: boolean) => (end ? pathname === to : pathname.startsWith(to))
 
@@ -122,10 +124,13 @@ export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: Sideba
       </nav>
 
       {/* Footer */}
-      <div className={cn('border-t border-gray-700 transition-all duration-300', collapsed ? 'md:px-2 md:py-3 px-6 py-4' : 'px-6 py-4')}>
-        <p className={cn('text-xs text-gray-500 truncate transition-all duration-300', collapsed && 'md:hidden')}>
-          v1.0 — School Admin
-        </p>
+      <div className={cn('border-t border-gray-700 transition-all duration-300', collapsed ? 'md:px-1 md:py-3 px-3 py-3' : 'px-3 py-3')}>
+        {email && (
+          <p className={cn('px-3 text-xs text-gray-500 truncate mb-1 transition-all duration-300', collapsed && 'md:hidden')}>
+            {email}
+          </p>
+        )}
+        <SignOutButton collapsed={collapsed} />
       </div>
     </aside>
   )
