@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, Newspaper, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { SignOutButton } from './SignOutButton'
 
@@ -14,9 +14,9 @@ const nav = [
   { to: '/schedule', icon: Calendar, label: 'Schedule' },
 ]
 
-const eventNav = [
-  { to: '/dspc', icon: Newspaper, label: 'DSPC Event' },
-]
+// DSPC event nav is archived, not deleted — the /dspc page, its API routes,
+// and the data all still work. Re-add an entry here (and the matching
+// section in the Dashboard page) the next time a DSPC event is scheduled.
 
 interface SidebarProps {
   isOpen?: boolean
@@ -84,34 +84,6 @@ export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse, email }:
               collapsed && 'md:justify-center md:px-2',
               isNavActive(to, to === '/')
                 ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-            )}
-          >
-            <Icon size={16} className="shrink-0" />
-            <span className={cn('whitespace-nowrap transition-all duration-300', collapsed && 'md:hidden')}>
-              {label}
-            </span>
-          </Link>
-        ))}
-
-        <div className={cn('mt-3 mb-1 px-3', collapsed && 'md:px-1')}>
-          <p className={cn('text-[10px] uppercase tracking-wider text-gray-500 font-semibold', collapsed && 'md:hidden')}>
-            Event
-          </p>
-          {collapsed && <div className="hidden md:block h-px bg-gray-700 mx-1" />}
-        </div>
-
-        {eventNav.map(({ to, icon: Icon, label }) => (
-          <Link
-            key={to}
-            href={to}
-            onClick={onClose}
-            title={collapsed ? label : undefined}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-              collapsed && 'md:justify-center md:px-2',
-              isNavActive(to, false)
-                ? 'bg-teal-600 text-white'
                 : 'text-gray-300 hover:bg-gray-800 hover:text-white'
             )}
           >

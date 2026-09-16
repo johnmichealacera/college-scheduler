@@ -1,16 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { Users, BookOpen, DoorOpen, Calendar, AlertTriangle, ArrowRight, Newspaper } from 'lucide-react'
+import { Users, BookOpen, DoorOpen, Calendar, AlertTriangle, ArrowRight } from 'lucide-react'
 import { useTeachers } from '@/hooks/useTeachers'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useRooms } from '@/hooks/useRooms'
 import { useSchedule } from '@/hooks/useSchedule'
-import { useDspcSchedule } from '@/hooks/useDspcSchedule'
 import { timesOverlap } from '@/lib/utils'
 import { DayBadge } from '@/components/ui/Badge'
 import { formatTime } from '@/lib/utils'
-import { contestSlotLabel, facilitatorDisplayName, formatEventDateShort } from '@/lib/dspc'
 
 function StatCard({
   label,
@@ -47,7 +45,6 @@ export default function DashboardPage() {
   const { data: subjects } = useSubjects()
   const { data: rooms } = useRooms()
   const { data: entries = [] } = useSchedule()
-  const { data: dspcEntries = [], isSuccess: dspcReady } = useDspcSchedule()
 
   // Only display entries within valid school hours (7:00–21:00 PH time)
   const validEntries = entries.filter((e) => e.start_time >= '07:00' && e.end_time <= '21:00')
@@ -146,52 +143,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-
-      {dspcReady && (
-        <div className="mt-5 bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Newspaper size={16} className="text-teal-600" />
-              <h2 className="font-semibold text-gray-900">DSPC Event</h2>
-            </div>
-            <Link
-              href="/dspc"
-              className="text-xs text-teal-700 hover:underline flex items-center gap-1"
-            >
-              Open DSPC schedule <ArrowRight size={12} />
-            </Link>
-          </div>
-          <p className="text-xs text-gray-400 mb-3">Separate from class schedules — does not affect attendance.</p>
-          {dspcEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-24 text-gray-400">
-              <p className="text-sm">No DSPC contests scheduled yet</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-gray-600 mb-3">
-                <span className="font-semibold text-gray-900">{dspcEntries.length}</span> contest slot{dspcEntries.length !== 1 ? 's' : ''} scheduled
-              </p>
-              <ul className="space-y-2">
-                {dspcEntries.slice(0, 5).map((e) => (
-                  <li key={e.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                    <div className="text-xs text-gray-500 w-28 shrink-0">
-                      {formatEventDateShort(e.event_date)}
-                      <div>{formatTime(e.start_time)} – {formatTime(e.end_time)}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{contestSlotLabel(e)}</p>
-                      <p className="text-xs text-gray-400 truncate">{facilitatorDisplayName(e)} · {e.room?.name}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {dspcEntries.length > 5 && (
-                <p className="text-xs text-gray-400 text-center mt-2">+{dspcEntries.length - 5} more</p>
-              )}
-            </>
-          )}
-        </div>
-      )}
     </div>
   )
 }
