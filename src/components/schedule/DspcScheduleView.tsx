@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, type ReactNode } from 'react'
 import { Plus, Filter, FileDown } from 'lucide-react'
 import { useDspcSchedule, useDeleteDspcScheduleEntry } from '../../hooks/useDspcSchedule'

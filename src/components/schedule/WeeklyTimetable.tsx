@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useMemo } from 'react'
 import { Pencil, User, MapPin, Clock, AlertTriangle } from 'lucide-react'
 import { formatTime, timesOverlap } from '../../lib/utils'

@@ -1,5 +1,7 @@
+'use client'
+
 import { Newspaper } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '../../lib/utils'
 import type { ScheduleView } from '../../types'
 
@@ -9,8 +11,8 @@ const OPTIONS: { value: ScheduleView; label: string; path: string }[] = [
 ]
 
 export function ScheduleViewSwitcher() {
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const value: ScheduleView = pathname.startsWith('/dspc') ? 'dspc' : 'school'
 
   return (
@@ -20,7 +22,7 @@ export function ScheduleViewSwitcher() {
         value={value}
         onChange={(e) => {
           const next = OPTIONS.find((option) => option.value === e.target.value)
-          if (next) navigate(next.path)
+          if (next) router.push(next.path)
         }}
         aria-label="Schedule type"
         className={cn(

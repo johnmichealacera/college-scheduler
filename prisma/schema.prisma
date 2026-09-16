@@ -1,0 +1,133 @@
+// This schema owns ONLY the college_scheduler tables below, and they live in
+// their own Postgres schema/namespace ("scheduler"), NOT in "public" where
+// bgfc-attendance-qr-webapp's tables (users, students, faculty, attendance,
+// schools, attendees, check_ins, winners) live.
+//
+// This isolation is load-bearing, not cosmetic: `prisma db push`/`migrate`
+// treats every table inside the Postgres schema(s) listed in `schemas` below
+// as fully "owned" by this Prisma schema, and will offer to DROP anything in
+// that scope it doesn't recognize. Simply not declaring bgfc's models here is
+// NOT enough on its own — without a distinct Postgres schema, both this repo
+// and bgfc's own Prisma schema would consider themselves the sole owner of
+// the same "public" namespace and could each propose dropping the other's
+// tables. Keeping our tables in "scheduler" makes that impossible in either
+// direction.
+//
+// All five models below are brand-new tables (nothing here exists in Neon
+// yet), so the first `prisma db push` only needs to CREATE SCHEMA "scheduler"
+// and create these tables inside it — it should never mention any table
+// outside that schema. If a `db push` ever proposes dropping/altering a table
+// that isn't one of these five, stop and do not confirm it.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["scheduler"]
+}
+
+// day/contest/language/level are plain text, not Postgres enums, on purpose:
+// they store the exact same literal strings the frontend already works with
+// (see src/types/index.ts — DAYS, CONTEST_CATEGORIES, LANGUAGE_OPTIONS,
+// LEVEL_OPTIONS), validated at the Zod layer. That keeps the exported
+// Supabase rows insertable verbatim with no value-translation step, and
+// keeps this a faithful port rather than a redesign.
+
+model Instructor {
+  id        String   @id @default(cuid())
+  fullName  String   @map("full_name")
+  email     String?  @unique
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subjects        Subject[]
+  classSchedules  ClassSchedule[]
+  dspcFacilitated DspcSchedule[]
+
+  @@map("instructors")
+  @@schema("scheduler")
+}
+
+model Subject {
+  id           String      @id @default(cuid())
+  name         String
+  code         String?
+  maxCapacity  Int         @default(40) @map("max_capacity")
+  instructorId String?     @map("instructor_id")
+  instructor   Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  classSchedules ClassSchedule[]
+
+  @@index([instructorId])
+  @@map("subjects")
+  @@schema("scheduler")
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  classSchedules ClassSchedule[]
+  dspcSchedules  DspcSchedule[]
+
+  @@map("rooms")
+  @@schema("scheduler")
+}
+
+model ClassSchedule {
+  id        String   @id @default(cuid())
+  subjectId String   @map("subject_id")
+  teacherId String   @map("teacher_id")
+  roomId    String   @map("room_id")
+  day       String
+  startTime DateTime @map("start_time") @db.Time(6)
+  endTime   DateTime @map("end_time") @db.Time(6)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subject Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher Instructor @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  room    Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([roomId])
+  @@index([day])
+  @@map("class_schedule")
+  @@schema("scheduler")
+}
+
+model DspcSchedule {
+  id            String   @id @default(cuid())
+  contest       String
+  language      String
+  level         String
+  facilitatorId String?  @map("facilitator_id")
+  roomId        String   @map("room_id")
+  eventDate     DateTime @map("event_date") @db.Date
+  startTime     DateTime @map("start_time") @db.Time(6)
+  endTime       DateTime @map("end_time") @db.Time(6)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  facilitator Instructor? @relation(fields: [facilitatorId], references: [id], onDelete: SetNull)
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([contest])
+  @@index([language])
+  @@index([level])
+  @@index([facilitatorId])
+  @@index([roomId])
+  @@index([eventDate])
+  @@map("dspc_schedule")
+  @@schema("scheduler")
+}

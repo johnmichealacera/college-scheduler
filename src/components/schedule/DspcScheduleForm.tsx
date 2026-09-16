@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useMemo, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
@@ -152,10 +154,6 @@ export function DspcScheduleForm({ entry, allEntries, onSuccess, onCancel }: Dsp
         typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
           ? error.message
           : 'Could not save this contest slot.'
-      if (message.includes('facilitator_id') && message.includes('null')) {
-        setSubmitError('TBA facilitators need a one-time database update. Run supabase/dspc_facilitator_optional.sql in the Supabase SQL Editor, then try again.')
-        return
-      }
       setSubmitError(message)
     }
   }

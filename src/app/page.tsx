@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
 import { Users, BookOpen, DoorOpen, Calendar, AlertTriangle, ArrowRight, Newspaper } from 'lucide-react'
 import { useTeachers } from '../hooks/useTeachers'
 import { useSubjects } from '../hooks/useSubjects'
@@ -25,7 +27,7 @@ function StatCard({
 }) {
   return (
     <Link
-      to={to}
+      href={to}
       className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all group flex items-center gap-4"
     >
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
@@ -40,7 +42,7 @@ function StatCard({
   )
 }
 
-export function Dashboard() {
+export default function DashboardPage() {
   const { data: teachers } = useTeachers()
   const { data: subjects } = useSubjects()
   const { data: rooms } = useRooms()
@@ -153,7 +155,7 @@ export function Dashboard() {
               <h2 className="font-semibold text-gray-900">DSPC Event</h2>
             </div>
             <Link
-              to="/dspc"
+              href="/dspc"
               className="text-xs text-teal-700 hover:underline flex items-center gap-1"
             >
               Open DSPC schedule <ArrowRight size={12} />

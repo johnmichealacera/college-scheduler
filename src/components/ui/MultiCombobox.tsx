@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
 import { Search, ChevronDown, Check } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -87,7 +89,7 @@ export function MultiCombobox({ placeholder, noun = 'items', options, values, on
         {open && (
           <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="px-3 py-2.5 text-sm text-gray-400">No results for "{query}"</p>
+              <p className="px-3 py-2.5 text-sm text-gray-400">No results for &quot;{query}&quot;</p>
             ) : (
               filtered.map((option) => {
                 const isSelected = values.includes(option.value)

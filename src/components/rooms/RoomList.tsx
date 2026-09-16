@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, DoorOpen, Search } from 'lucide-react'
 import { useRooms, useDeleteRoom } from '../../hooks/useRooms'

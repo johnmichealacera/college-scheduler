@@ -1,3 +1,5 @@
+'use client'
+
 import { type ReactNode, useState } from 'react'
 import { Menu, Calendar } from 'lucide-react'
 import { Sidebar } from './Sidebar'

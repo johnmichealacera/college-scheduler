@@ -9,6 +9,14 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.supabase.bak
+
+# Next.js
+.next
+next-env.d.ts
+
+# Prisma generated client
+src/generated/prisma
 
 # Logs
 logs

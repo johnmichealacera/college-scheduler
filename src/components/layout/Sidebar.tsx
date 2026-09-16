@@ -1,4 +1,7 @@
-import { NavLink } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, BookOpen, DoorOpen, Calendar, Newspaper, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
@@ -22,6 +25,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
+  const pathname = usePathname()
+  const isNavActive = (to: string, end: boolean) => (end ? pathname === to : pathname.startsWith(to))
+
   return (
     <aside
       className={cn(
@@ -66,27 +72,24 @@ export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: Sideba
       {/* Nav */}
       <nav className={cn('flex-1 py-4 flex flex-col gap-1 transition-all duration-300', collapsed ? 'md:px-1 px-3' : 'px-3')}>
         {nav.map(({ to, icon: Icon, label }) => (
-          <NavLink
+          <Link
             key={to}
-            to={to}
-            end={to === '/'}
+            href={to}
             onClick={onClose}
             title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                collapsed && 'md:justify-center md:px-2',
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              )
-            }
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              collapsed && 'md:justify-center md:px-2',
+              isNavActive(to, to === '/')
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+            )}
           >
             <Icon size={16} className="shrink-0" />
             <span className={cn('whitespace-nowrap transition-all duration-300', collapsed && 'md:hidden')}>
               {label}
             </span>
-          </NavLink>
+          </Link>
         ))}
 
         <div className={cn('mt-3 mb-1 px-3', collapsed && 'md:px-1')}>
@@ -97,26 +100,24 @@ export function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: Sideba
         </div>
 
         {eventNav.map(({ to, icon: Icon, label }) => (
-          <NavLink
+          <Link
             key={to}
-            to={to}
+            href={to}
             onClick={onClose}
             title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                collapsed && 'md:justify-center md:px-2',
-                isActive
-                  ? 'bg-teal-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              )
-            }
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              collapsed && 'md:justify-center md:px-2',
+              isNavActive(to, false)
+                ? 'bg-teal-600 text-white'
+                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+            )}
           >
             <Icon size={16} className="shrink-0" />
             <span className={cn('whitespace-nowrap transition-all duration-300', collapsed && 'md:hidden')}>
               {label}
             </span>
-          </NavLink>
+          </Link>
         ))}
       </nav>
 

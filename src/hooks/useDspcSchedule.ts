@@ -1,27 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { fetchJson } from '../lib/http'
 import type { ContestCategory, DspcScheduleEntry, LanguageOption, LevelOption } from '../types'
 
-const TABLE = 'dspc_schedule'
+// API route: /api/dspc-schedule
 const KEY = 'dspc-schedule'
 
-const SELECT = `
-  *,
-  facilitator:instructors!facilitator_id(id, full_name, created_at),
-  room:rooms(id, name, created_at)
-`
-
-type DbEntry = Omit<DspcScheduleEntry, 'facilitator'> & {
-  facilitator: { id: string; full_name: string; created_at: string } | null
+type DbEntry = {
+  id: string
+  contest: ContestCategory
+  language: LanguageOption
+  level: LevelOption
+  facilitatorId: string | null
+  roomId: string
+  eventDate: string
+  startTime: string
+  endTime: string
+  createdAt: string
+  facilitator: { id: string; fullName: string; createdAt: string } | null
+  room: { id: string; name: string; createdAt: string } | null
 }
 
 function mapRow(row: DbEntry): DspcScheduleEntry {
   return {
-    ...row,
-    event_date: String(row.event_date).slice(0, 10),
+    id: row.id,
+    contest: row.contest,
+    language: row.language,
+    level: row.level,
+    facilitator_id: row.facilitatorId,
+    room_id: row.roomId,
+    event_date: row.eventDate.slice(0, 10),
+    start_time: row.startTime,
+    end_time: row.endTime,
+    created_at: row.createdAt,
     facilitator: row.facilitator
-      ? { id: row.facilitator.id, name: row.facilitator.full_name, created_at: row.facilitator.created_at }
+      ? { id: row.facilitator.id, name: row.facilitator.fullName, created_at: row.facilitator.createdAt }
       : undefined,
+    room: row.room ? { id: row.room.id, name: row.room.name, created_at: row.room.createdAt } : undefined,
   }
 }
 
@@ -29,9 +43,8 @@ export function useDspcSchedule() {
   return useQuery<DspcScheduleEntry[]>({
     queryKey: [KEY],
     queryFn: async () => {
-      const { data, error } = await supabase.from(TABLE).select(SELECT).order('event_date').order('start_time')
-      if (error) throw error
-      return (data as DbEntry[]).map(mapRow)
+      const rows = await fetchJson<DbEntry[]>('/api/dspc-schedule')
+      return rows.map(mapRow)
     },
     retry: false,
   })
@@ -48,13 +61,29 @@ export interface CreateDspcSchedulePayload {
   end_time: string
 }
 
+function toApiBody(payload: CreateDspcSchedulePayload) {
+  return {
+    contest: payload.contest,
+    language: payload.language,
+    level: payload.level,
+    facilitatorId: payload.facilitator_id,
+    roomId: payload.room_id,
+    eventDate: payload.event_date,
+    startTime: payload.start_time,
+    endTime: payload.end_time,
+  }
+}
+
 export function useCreateDspcScheduleEntry() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: CreateDspcSchedulePayload) => {
-      const { data, error } = await supabase.from(TABLE).insert(payload).select(SELECT).single()
-      if (error) throw error
-      return mapRow(data as DbEntry)
+      const row = await fetchJson<DbEntry>('/api/dspc-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toApiBody(payload)),
+      })
+      return mapRow(row)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   })
@@ -64,9 +93,12 @@ export function useUpdateDspcScheduleEntry() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...payload }: CreateDspcSchedulePayload & { id: string }) => {
-      const { data, error } = await supabase.from(TABLE).update(payload).eq('id', id).select(SELECT).single()
-      if (error) throw error
-      return mapRow(data as DbEntry)
+      const row = await fetchJson<DbEntry>(`/api/dspc-schedule/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toApiBody(payload)),
+      })
+      return mapRow(row)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   })
@@ -76,8 +108,7 @@ export function useDeleteDspcScheduleEntry() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(TABLE).delete().eq('id', id)
-      if (error) throw error
+      await fetchJson(`/api/dspc-schedule/${id}`, { method: 'DELETE' })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   })

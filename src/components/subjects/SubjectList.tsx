@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, BookOpen, Search } from 'lucide-react'
 import { useSubjects, useDeleteSubject } from '../../hooks/useSubjects'

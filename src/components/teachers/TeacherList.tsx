@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, Users, Search } from 'lucide-react'
 import { useTeachers, useDeleteTeacher } from '../../hooks/useTeachers'
