@@ -9,8 +9,10 @@ type DbSubject = {
   id: string
   name: string
   instructorId: string | null
+  maxCapacity: number
   createdAt: string
   instructor: { id: string; fullName: string; createdAt: string } | null
+  _count?: { enrollments: number }
 }
 
 function mapRow(row: DbSubject): Subject {
@@ -21,6 +23,8 @@ function mapRow(row: DbSubject): Subject {
     teacher: row.instructor
       ? { id: row.instructor.id, name: row.instructor.fullName, created_at: row.instructor.createdAt }
       : undefined,
+    max_capacity: row.maxCapacity,
+    enrolled_count: row._count?.enrollments,
     created_at: row.createdAt,
   }
 }
@@ -38,11 +42,19 @@ export function useSubjects() {
 export function useCreateSubject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ name, teacher_id }: { name: string; teacher_id: string | null }) => {
+    mutationFn: async ({
+      name,
+      teacher_id,
+      max_capacity,
+    }: {
+      name: string
+      teacher_id: string | null
+      max_capacity: number
+    }) => {
       const row = await fetchJson<DbSubject>('/api/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, instructorId: teacher_id }),
+        body: JSON.stringify({ name, instructorId: teacher_id, maxCapacity: max_capacity }),
       })
       return mapRow(row)
     },
@@ -53,11 +65,21 @@ export function useCreateSubject() {
 export function useUpdateSubject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, name, teacher_id }: { id: string; name: string; teacher_id: string | null }) => {
+    mutationFn: async ({
+      id,
+      name,
+      teacher_id,
+      max_capacity,
+    }: {
+      id: string
+      name: string
+      teacher_id: string | null
+      max_capacity: number
+    }) => {
       const row = await fetchJson<DbSubject>(`/api/subjects/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, instructorId: teacher_id }),
+        body: JSON.stringify({ name, instructorId: teacher_id, maxCapacity: max_capacity }),
       })
       return mapRow(row)
     },

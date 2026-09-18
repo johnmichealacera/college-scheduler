@@ -10,6 +10,8 @@ export interface Subject {
   name: string
   teacher_id: string | null
   teacher?: Teacher
+  max_capacity: number
+  enrolled_count?: number
   created_at: string
 }
 
@@ -40,9 +42,28 @@ export interface ScheduleEntry {
 }
 
 export interface Conflict {
-  type: 'teacher' | 'room' | 'facilitator'
+  type: 'teacher' | 'room' | 'facilitator' | 'student'
   message: string
   conflictingEntry: ScheduleEntry
+}
+
+export interface Student {
+  id: string
+  student_id: string
+  name: string
+  email: string
+  course: string
+  year_level: string
+  already_enrolled?: boolean
+}
+
+export interface Enrollment {
+  id: string
+  subject_id: string
+  student_id: string
+  enrolled_at: string
+  student?: Student
+  orphaned?: boolean
 }
 
 export interface TimeSlot {

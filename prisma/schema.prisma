@@ -71,9 +71,29 @@ model Subject {
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
   classSchedules ClassSchedule[]
+  enrollments    Enrollment[]
 
   @@index([instructorId])
   @@map("subjects")
+  @@schema("scheduler")
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  subjectId  String   @map("subject_id")
+  // Scalar only — deliberately NOT a Prisma relation. The student record
+  // lives in bgfc-attendance-qr-webapp's public.students table, which this
+  // schema must never declare (see the note at the top of this file). Reads
+  // go through raw SQL, same as src/lib/auth.ts already does for login.
+  studentId  String   @map("student_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, studentId])
+  @@index([subjectId])
+  @@index([studentId])
+  @@map("enrollments")
   @@schema("scheduler")
 }
 

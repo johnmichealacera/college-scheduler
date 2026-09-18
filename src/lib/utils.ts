@@ -56,6 +56,25 @@ export function detectConflicts(
   return conflicts
 }
 
+export function detectStudentConflicts(proposedEntries: ScheduleEntry[], existingEntries: ScheduleEntry[]): Conflict[] {
+  const conflicts: Conflict[] = []
+
+  for (const proposed of proposedEntries) {
+    const candidates = existingEntries.filter((e) => e.day === proposed.day)
+    for (const entry of candidates) {
+      if (!timesOverlap(proposed.start_time, proposed.end_time, entry.start_time, entry.end_time)) continue
+
+      conflicts.push({
+        type: 'student',
+        message: `Student is already enrolled in "${entry.subject?.name ?? 'another subject'}", which meets ${entry.day} ${formatTime(entry.start_time)}–${formatTime(entry.end_time)} — this overlaps the selected subject's schedule.`,
+        conflictingEntry: entry,
+      })
+    }
+  }
+
+  return conflicts
+}
+
 export function suggestAvailableSlots(
   existing: ScheduleEntry[],
   day: string,

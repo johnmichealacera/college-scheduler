@@ -95,7 +95,7 @@ export function dspcToScheduleEntry(entry: DspcScheduleEntry): ScheduleEntry {
     event_date: entry.event_date.slice(0, 10),
     start_time: entry.start_time,
     end_time: entry.end_time,
-    subject: { id: entry.contest, name: title, teacher_id: null, created_at: entry.created_at },
+    subject: { id: entry.contest, name: title, teacher_id: null, max_capacity: 0, created_at: entry.created_at },
     teacher: entry.facilitator ?? { id: DSPC_FACILITATOR_TBA, name: DSPC_FACILITATOR_TBA, created_at: entry.created_at },
     room: entry.room,
     created_at: entry.created_at,

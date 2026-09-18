@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, BookOpen, Search } from 'lucide-react'
+import { Pencil, Trash2, Plus, BookOpen, Search, Users } from 'lucide-react'
 import { useSubjects, useDeleteSubject } from '../../hooks/useSubjects'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { SubjectForm } from './SubjectForm'
 import { PageHeader } from '../layout/PageHeader'
+import { RosterModal } from '../enrollment/RosterModal'
 import type { Subject } from '../../types'
 
 export function SubjectList() {
   const { data: subjects, isLoading } = useSubjects()
   const deleteSubject = useDeleteSubject()
   const [modal, setModal] = useState<'add' | Subject | null>(null)
+  const [rosterSubject, setRosterSubject] = useState<Subject | null>(null)
   const [search, setSearch] = useState('')
 
   const filtered = subjects?.filter((s) =>
@@ -20,7 +22,7 @@ export function SubjectList() {
   )
 
   const handleDelete = (id: string) => {
-    if (confirm('Delete this subject? Its schedule entries will also be removed.')) {
+    if (confirm('Delete this subject? Its schedule entries and enrollments will also be removed.')) {
       deleteSubject.mutate(id)
     }
   }
@@ -71,10 +73,15 @@ export function SubjectList() {
                   <p className="font-medium text-gray-900">{s.name}</p>
                   <p className="text-xs text-gray-400">
                     {s.teacher ? s.teacher.name : 'No teacher assigned'}
+                    {' · '}
+                    {s.enrolled_count ?? 0} / {s.max_capacity} enrolled
                   </p>
                 </div>
               </div>
               <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => setRosterSubject(s)} title="Manage roster">
+                  <Users size={14} />
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => setModal(s)}>
                   <Pencil size={14} />
                 </Button>
@@ -96,6 +103,15 @@ export function SubjectList() {
           subject={modal !== 'add' && modal !== null ? modal : undefined}
           onSuccess={() => setModal(null)}
         />
+      </Modal>
+
+      <Modal
+        open={rosterSubject !== null}
+        onClose={() => setRosterSubject(null)}
+        title={rosterSubject ? `Roster — ${rosterSubject.name}` : 'Roster'}
+        className="max-w-lg"
+      >
+        {rosterSubject && <RosterModal subject={rosterSubject} />}
       </Modal>
     </div>
   )

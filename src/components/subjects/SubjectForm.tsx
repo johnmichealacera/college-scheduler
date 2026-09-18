@@ -14,6 +14,7 @@ import type { Subject } from '../../types'
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   teacher_id: z.string().nullable(),
+  max_capacity: z.number().int().min(1, 'Must be at least 1'),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -25,18 +26,26 @@ export function SubjectForm({ subject, onSuccess }: { subject?: Subject; onSucce
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: subject?.name ?? '', teacher_id: subject?.teacher_id ?? null },
+    defaultValues: {
+      name: subject?.name ?? '',
+      teacher_id: subject?.teacher_id ?? null,
+      max_capacity: subject?.max_capacity ?? 40,
+    },
   })
 
   useEffect(() => {
-    reset({ name: subject?.name ?? '', teacher_id: subject?.teacher_id ?? null })
+    reset({
+      name: subject?.name ?? '',
+      teacher_id: subject?.teacher_id ?? null,
+      max_capacity: subject?.max_capacity ?? 40,
+    })
   }, [subject, reset])
 
-  const onSubmit = async ({ name, teacher_id }: FormValues) => {
+  const onSubmit = async ({ name, teacher_id, max_capacity }: FormValues) => {
     if (isEdit) {
-      await update.mutateAsync({ id: subject.id, name, teacher_id: teacher_id || null })
+      await update.mutateAsync({ id: subject.id, name, teacher_id: teacher_id || null, max_capacity })
     } else {
-      await create.mutateAsync({ name, teacher_id: teacher_id || null })
+      await create.mutateAsync({ name, teacher_id: teacher_id || null, max_capacity })
     }
     onSuccess()
   }
@@ -47,6 +56,13 @@ export function SubjectForm({ subject, onSuccess }: { subject?: Subject; onSucce
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <Input label="Subject Name" placeholder="e.g. Mathematics" error={errors.name?.message} {...register('name')} />
+      <Input
+        label="Max Capacity"
+        type="number"
+        min={1}
+        error={errors.max_capacity?.message}
+        {...register('max_capacity', { valueAsNumber: true })}
+      />
       <Controller
         name="teacher_id"
         control={control}

@@ -14,7 +14,7 @@ type DbEntry = {
   startTime: string
   endTime: string
   createdAt: string
-  subject: { id: string; name: string; instructorId: string | null; createdAt: string } | null
+  subject: { id: string; name: string; instructorId: string | null; maxCapacity: number; createdAt: string } | null
   teacher: { id: string; fullName: string; createdAt: string } | null
   room: { id: string; name: string; createdAt: string } | null
 }
@@ -30,7 +30,13 @@ function mapRow(row: DbEntry): ScheduleEntry {
     end_time: row.endTime,
     created_at: row.createdAt,
     subject: row.subject
-      ? { id: row.subject.id, name: row.subject.name, teacher_id: row.subject.instructorId, created_at: row.subject.createdAt }
+      ? {
+          id: row.subject.id,
+          name: row.subject.name,
+          teacher_id: row.subject.instructorId,
+          max_capacity: row.subject.maxCapacity,
+          created_at: row.subject.createdAt,
+        }
       : undefined,
     teacher: row.teacher
       ? { id: row.teacher.id, name: row.teacher.fullName, created_at: row.teacher.createdAt }
